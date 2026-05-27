@@ -1,0 +1,268 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────
+   UNFILTERED — Redacted Editorial design tokens.
+   Tailwind v4 reads @theme directly; every key becomes a utility.
+   ───────────────────────────────────────────────────────────── */
+@theme {
+  /* Restrained editorial palette — one accent, no competing chroma.
+     Yellow + green tokens stay defined for legacy class names but are
+     re-pointed to neutrals so any leftover usage degrades to muted gray
+     instead of shouting. */
+  --color-ink: #0A0A0A;          /* deeper cinematic black */
+  --color-newsprint: #E8E1D0;    /* warm bone — more readable than #EFE9DA */
+  --color-paper: #F5F0E3;        /* inverse-section paper */
+  --color-redaction: #050505;    /* near-black, slightly softer than pure */
+  --color-truth: #FF4332;        /* vermillion — editorial, not Coca-Cola */
+  --color-muted: #9A938A;        /* warm gray — WCAG AA on ink at body size */
+  /* legacy tokens, now silent so old class names degrade gracefully */
+  --color-verified: #9A938A;
+  --color-highlighter: #E8E1D0;
+
+  /* Display: Fraunces (for the giant headlines)
+     Body:    Inter Tight — far more readable on-screen than Instrument Serif at body size
+     Quote:   Instrument Serif — reserved for italic pull-quotes and decorative moments
+     Mono:    JetBrains Mono (for metadata/case labels) */
+  --font-display: "Fraunces", "Times New Roman", serif;
+  --font-sans: "Inter Tight", system-ui, sans-serif;
+  --font-serif: "Inter Tight", system-ui, sans-serif;
+  --font-quote: "Instrument Serif", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Editorial scale — extreme contrast is the point. */
+  --text-meta: 0.6875rem;       /* 11px metadata */
+  --text-body: 1.0625rem;       /* 17px reading */
+  --text-pull: 8vw;             /* pull-quote */
+  --text-display: clamp(4rem, 18vw, 15rem);
+  --text-mega: clamp(6rem, 24vw, 240px);
+
+  /* Editorial easings — never "ease-in-out". */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-press: cubic-bezier(0.7, 0, 0.3, 1);
+  --ease-paper: cubic-bezier(0.86, 0, 0.07, 1);
+
+  --shadow-newsprint: 0 1px 0 rgba(0,0,0,0.06), 0 30px 60px -30px rgba(0,0,0,0.4);
+}
+
+/* ───── base ───── */
+html {
+  background: var(--color-ink);
+  color: var(--color-newsprint);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "ss02", "kern", "liga";
+}
+body {
+  /* Body in Inter Tight at 18px / 1.6 — calibrated for screen reading.
+     italic pull-quotes opt back into Instrument Serif via .font-quote. */
+  font-family: var(--font-sans);
+  font-size: 1.125rem;
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+  overscroll-behavior: none;
+  cursor: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─────────────────────────────────────────────────────────
+   Contrast safety net.
+   Tailwind colour-mix utilities (`text-newsprint/40` etc.) blend the
+   tracked colour with `transparent`. When `transparent` is `rgba(0,0,0,0)`,
+   the resulting compositing against the page background produces
+   ~40%-opacity text that often falls below WCAG AA at body sizes.
+   We pin a CSS variable floor so any "/20-/50" utility on TEXT lands
+   at a guaranteed-readable opacity. Borders/placeholders opt out by
+   carrying the .can-fade class (form inputs add it explicitly).
+   ───────────────────────────────────────────────────────── */
+[class~="text-newsprint/10"]:not(.can-fade),
+[class~="text-newsprint/20"]:not(.can-fade),
+[class~="text-newsprint/30"]:not(.can-fade) {
+  color: color-mix(in srgb, var(--color-newsprint) 60%, transparent) !important;
+}
+[class~="text-newsprint/40"]:not(.can-fade) {
+  color: color-mix(in srgb, var(--color-newsprint) 65%, transparent) !important;
+}
+[class~="text-newsprint/50"]:not(.can-fade) {
+  color: color-mix(in srgb, var(--color-newsprint) 75%, transparent) !important;
+}
+[class~="text-ink/10"]:not(.can-fade),
+[class~="text-ink/20"]:not(.can-fade),
+[class~="text-ink/30"]:not(.can-fade) {
+  color: color-mix(in srgb, var(--color-ink) 65%, transparent) !important;
+}
+[class~="text-ink/40"]:not(.can-fade) {
+  color: color-mix(in srgb, var(--color-ink) 70%, transparent) !important;
+}
+[class~="text-ink/50"]:not(.can-fade) {
+  color: color-mix(in srgb, var(--color-ink) 80%, transparent) !important;
+}
+
+/* Italic / pull-quote opt-in — keeps Instrument Serif as a "moment"
+   typeface, never as the workhorse.
+   - <em> and explicit [data-quote] / .font-quote always opt in
+   - `font-serif italic` (used by existing pull-quote markup) opts in too */
+em, blockquote em, .font-quote, [data-quote],
+.font-serif.italic, .italic.font-serif {
+  font-family: var(--font-quote);
+  font-style: italic;
+  letter-spacing: -0.005em;
+}
+@media (pointer: coarse) {
+  body { cursor: auto; }
+}
+
+/* Selection: redaction-bar style. */
+::selection {
+  background: var(--color-truth);
+  color: var(--color-newsprint);
+}
+
+/* ───── Lenis ───── */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+/* ───── Editorial typography helpers ───── */
+.drop-cap::first-letter {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 7em;
+  float: left;
+  line-height: 0.8;
+  margin: 0.1em 0.1em 0 -0.05em;
+  color: var(--color-truth);
+}
+
+.pull-quote {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-style: italic;
+  font-size: var(--text-pull);
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+}
+
+/* Newsprint texture — subtle paper grain via CSS. */
+.paper {
+  background:
+    radial-gradient(rgba(0,0,0,0.035) 1px, transparent 1px) 0 0/3px 3px,
+    var(--color-paper);
+  color: var(--color-ink);
+}
+
+/* Ink-on-paper headlines with ghost offset. */
+.ink-stamp {
+  position: relative;
+  display: inline-block;
+}
+.ink-stamp::after {
+  content: attr(data-stamp);
+  position: absolute;
+  inset: 0;
+  color: var(--color-truth);
+  mix-blend-mode: multiply;
+  transform: translate(3px, 3px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Redaction bar — thinner & less alarming than the original.
+   The bar now hugs the type tightly (inset 0.05em / -0.05em) rather than
+   ballooning outward, so headlines look censored, not bashed. */
+.redact {
+  position: relative;
+  display: inline;
+  color: transparent;
+}
+.redact::before {
+  content: "";
+  position: absolute;
+  inset: 0.06em -0.08em;
+  background: var(--color-redaction);
+  transform: scaleX(1);
+  transform-origin: left;
+  transition: transform 0.7s var(--ease-paper);
+  z-index: 1;
+}
+.redact > span { position: relative; z-index: 2; color: var(--color-truth); }
+.redact[data-revealed="true"]::before { transform: scaleX(0); transform-origin: right; }
+
+/* Print stylesheet — college pages become a newspaper article. */
+@media print {
+  html, body { background: white !important; color: black !important; cursor: auto !important; }
+  .no-print, nav, [data-cursor], canvas, video { display: none !important; }
+  .paper { background: white !important; }
+  h1, h2 { page-break-after: avoid; font-family: var(--font-display); }
+  article { columns: 2; column-gap: 2rem; }
+}
+
+/* Reduced motion — disable all transforms, keep opacity transitions. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .redact::before { transform: scaleX(1) !important; }
+  [data-revealed="true"].redact::before { transform: scaleX(0) !important; }
+}
+
+/* Scrollbar — minimal, doesn't compete with custom cursor. */
+::-webkit-scrollbar { width: 0; height: 0; }
+
+/* Magnetic / hover affordances. */
+.magnet { transition: transform 0.5s var(--ease-expo); will-change: transform; }
+
+/* Editorial divider — newspaper rule. */
+.rule {
+  height: 1px;
+  background: currentColor;
+  opacity: 0.2;
+}
+
+/* Highlighter underline animation. */
+.highlight-link {
+  background-image: linear-gradient(var(--color-highlighter), var(--color-highlighter));
+  background-size: 0% 30%;
+  background-repeat: no-repeat;
+  background-position: 0 90%;
+  transition: background-size 0.5s var(--ease-expo);
+  padding: 0 0.1em;
+}
+.highlight-link:hover { background-size: 100% 30%; }
+
+/* View Transitions API — diagonal wipe between routes. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.7s;
+  animation-timing-function: var(--ease-paper);
+}
+::view-transition-old(root) {
+  animation-name: wipe-out;
+}
+::view-transition-new(root) {
+  animation-name: wipe-in;
+}
+@keyframes wipe-out {
+  to { clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%); }
+}
+@keyframes wipe-in {
+  from { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); }
+}
+
+/* Soft pulse for ambient interaction affordances. */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.75); }
+}
+
+/* Loading bar morph. */
+@keyframes redaction-assemble {
+  0%   { transform: scaleX(0); transform-origin: left; }
+  50%  { transform: scaleX(1); transform-origin: left; }
+  51%  { transform-origin: right; }
+  100% { transform: scaleX(0); transform-origin: right; }
+}
