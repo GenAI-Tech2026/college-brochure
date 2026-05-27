@@ -13,6 +13,7 @@
  * signature. ~1 viewport instead of seven.
  */
 import { RevealText } from "@/components/RevealText";
+import { ScrollRevealQuote } from "@/components/ScrollRevealQuote";
 import ManifestoScene from "@/components/manifesto/ManifestoSceneClient";
 
 const theses: Array<{ n: string; body: string }> = [
@@ -55,9 +56,9 @@ export default function ManifestoPage() {
             ))}
           </ol>
 
-          <p className="mt-16 pull-quote text-newsprint text-balance">
+          <ScrollRevealQuote className="mt-16 pull-quote text-newsprint text-balance">
             A brochure printed nine hundred thousand times can be corrected once, by a verified student, in front of every reader who came next.
-          </p>
+          </ScrollRevealQuote>
 
           <p className="mt-10 font-mono text-meta uppercase tracking-[0.3em] text-newsprint/60">
             — UNFILTERED · 2026

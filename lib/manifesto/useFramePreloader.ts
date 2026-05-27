@@ -83,44 +83,41 @@ export function useFramePreloader({
     const bitmaps = bitmapsRef.current;
     let decoded = 0;
     let kickedOff = false;
-    let firstMissingReported = false;
+    // Single bail-out flag. The first 404 (or network failure) means we know
+    // there are no real Blender renders for this orientation yet — synth
+    // mode covers the entire sequence on its own, so making 239 more pointless
+    // requests just spams the dev-server log and wastes battery.
+    let aborted = false;
 
     const decodeOne = async (i: number) => {
+      if (aborted || cancelled) return;
       try {
         const res = await fetch(frameUrl(i), { cache: "force-cache" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const blob = await res.blob();
-        // createImageBitmap → off-thread decode on all modern browsers.
         const bmp = await createImageBitmap(blob);
-        if (cancelled) {
+        if (cancelled || aborted) {
           bmp.close();
           return;
         }
         bitmaps.set(i, bmp);
-      } catch {
-        // First miss flips a flag so the consumer can swap to programmatic
-        // canvas rendering for ALL frames instead of a flickering hybrid.
-        if (!firstMissingReported) {
-          firstMissingReported = true;
-          if (!cancelled) bump({ missing: true });
-        }
-      } finally {
         decoded += 1;
+      } catch {
+        if (aborted) return;
+        aborted = true;
+        if (!cancelled) bump({ missing: true, progress: 1, readyEnough: true, complete: true });
       }
     };
 
     const run = async () => {
-      // Walk frames in CHUNK groups so each yield-point is bounded. Within a
-      // chunk we decode in parallel — the browser parallelises network +
-      // off-thread decode, but we don't want to fire 240 concurrent requests.
       for (let start = 0; start < count; start += chunkSize) {
-        if (cancelled) return;
+        if (cancelled || aborted) return;
         const indices: number[] = [];
         for (let i = start; i < Math.min(start + chunkSize, count); i++) {
           indices.push(i);
         }
         await Promise.all(indices.map(decodeOne));
-        if (cancelled) return;
+        if (cancelled || aborted) return;
 
         const progress = decoded / count;
         const justKickedOff = !kickedOff && decoded >= kickoffFrames;
@@ -138,7 +135,6 @@ export function useFramePreloader({
 
     return () => {
       cancelled = true;
-      // Release GPU memory on unmount.
       for (const bmp of bitmaps.values()) bmp.close();
       bitmaps.clear();
     };
