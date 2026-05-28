@@ -1,186 +1,147 @@
 "use client";
-import dynamic from "next/dynamic";
-import { useEffect, useRef } from "react";
-import { RevealText } from "@/components/RevealText";
 import { MagneticButton } from "@/components/MagneticButton";
-import { Spinner } from "@/components/Spinner";
-import { splitText } from "@/lib/utils/splitText";
-
-// PixiJS only ships to the browser, never to the SSR bundle.
-// The `loading` fallback gives slow-connection users a redacted-bar
-// indicator while the ~150 KB Pixi chunk parses.
-const PixiHero = dynamic(
-  () => import("@/components/hero/PixiHero").then((m) => m.PixiHero),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="pointer-events-none absolute inset-0 -z-10 grid place-items-center bg-ink">
-        <Spinner size="md" label="Loading the brochure…" className="text-newsprint" />
-      </div>
-    ),
-  }
-);
+import { liveStats } from "@/lib/mock-data/home-stats";
+import { LedgerTile } from "./hero/LedgerTile";
+import { LiesCounter } from "./hero/LiesCounter";
+import { BrochureVsReality } from "./hero/BrochureVsReality";
+import { QuoteTicker } from "./hero/QuoteTicker";
+import { TruthGauge } from "./hero/TruthGauge";
+import { AmbientParticles } from "./hero/AmbientParticles";
 
 /**
- * The first 100vh. The headline is the centrepiece — and now it actually
- * TEARS APART as the user scrolls. Each character of every line gets a
- * random tear vector (rotation + xy translation) that scales with the
- * normalised scroll distance through the hero section. By the time the
- * user has scrolled one viewport, the headline has been visibly ripped
- * apart and flung off-screen — exactly what the brochure-lie metaphor
- * promised.
+ * THE LIVE LEDGER — new home hero.
  *
- * Implementation:
- *   - splitText() wraps every visible char in a span on mount (post the
- *     initial RevealText entrance, which uses its own split)
- *   - We assign each char a random (vx, vy, vr) — stored as data-* on
- *     the element so GSAP doesn't have to allocate per frame
- *   - A single RAF loop reads window.scrollY, computes a 0–1 progress
- *     through the hero, and writes transform on each char. No GSAP
- *     ScrollTrigger needed — we want this to be cheap and start
- *     immediately on the very first pixel of scroll.
+ * Layout: asymmetric 12-col editorial grid.
+ *   cols 1-5   →  headline + tagline + CTAs
+ *   cols 6-12  →  2x2 tile panel ("the evidence on a corkboard")
+ *
+ * Mobile (<768px): the grid collapses to a single column; the panel
+ * tiles stack vertically. Each tile keeps all its animations — they
+ * scale to fit the smaller width.
+ *
+ * Total visible body copy: 12 words ("We have the receipts. 247,891
+ * of them." + the two button labels). Everything else the user sees
+ * is data.
+ *
+ * The previous Pixi-based "tear-apart" hero has been retired. If you
+ * need the old one back, it's preserved in git history at commit
+ * 7eb40ee8.
  */
 export function Hero() {
-  const titleRef = useRef<HTMLHeadingElement>(null);
-
-  useEffect(() => {
-    if (!titleRef.current) return;
-    if (typeof window === "undefined") return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) return;
-
-    // Wait until the RevealText entrance animations have completed before
-    // we steal the chars. Otherwise our split clobbers their refs.
-    const armDelay = setTimeout(() => {
-      if (!titleRef.current) return;
-
-      // Split each [data-tear] line into chars
-      const lines = titleRef.current.querySelectorAll<HTMLElement>("[data-tear]");
-      const allChars: { el: HTMLElement; vx: number; vy: number; vr: number; bias: number }[] = [];
-      lines.forEach((line, lineIdx) => {
-        const split = splitText(line, { chars: true });
-        split.chars.forEach((c, idx) => {
-          // Random tear vector per char. Directions favour outward —
-          // chars near the left of a word fly LEFT, right of a word fly RIGHT
-          const half = split.chars.length / 2;
-          const xBias = (idx - half) / half;        // -1 .. +1
-          const yBias = lineIdx === 0 ? -1 : 1;     // top line up, bottom down
-          allChars.push({
-            el: c,
-            vx: xBias * (120 + Math.random() * 200),
-            vy: yBias * (40 + Math.random() * 160) + (Math.random() - 0.5) * 60,
-            vr: (Math.random() - 0.5) * 90,
-            bias: Math.random() * 0.25,           // staggered tear-in
-          });
-          c.style.willChange = "transform, opacity";
-          c.style.transition = "none";
-        });
-      });
-
-      // Single RAF loop
-      let raf = 0;
-      const tick = () => {
-        raf = requestAnimationFrame(tick);
-        const sectionH = window.innerHeight;
-        const p = Math.min(1, Math.max(0, window.scrollY / sectionH));
-        for (const c of allChars) {
-          const t = Math.max(0, p - c.bias) * 1.4;
-          // ease — cubic for that sudden snap feel
-          const e = t * t * t;
-          c.el.style.transform = `translate3d(${c.vx * e}px, ${c.vy * e}px, 0) rotate(${c.vr * e}deg)`;
-          c.el.style.opacity = `${Math.max(0, 1 - t * 1.1)}`;
-        }
-      };
-      raf = requestAnimationFrame(tick);
-
-      // store on the ref so cleanup can stop it
-      (titleRef.current as HTMLElement & { __raf?: number }).__raf = raf;
-    }, 1600); // RevealText entrances finish around 1.4s; give a small buffer
-
-    return () => {
-      clearTimeout(armDelay);
-      const r = (titleRef.current as (HTMLElement & { __raf?: number }) | null)?.__raf;
-      if (r) cancelAnimationFrame(r);
-    };
-  }, []);
-
   return (
-    // bg-ink locked regardless of paper/ink theme.
-    <section className="relative isolate flex min-h-[100svh] flex-col justify-end overflow-hidden bg-ink px-5 pb-12 pt-28 md:px-10 md:pb-24 md:pt-32">
-      <PixiHero />
+    <section className="relative isolate flex min-h-[100svh] flex-col justify-center overflow-hidden px-5 pt-28 pb-12 md:px-10 md:pt-32 md:pb-16">
+      {/* Headline scrim — weights the left column over the page-level video so
+          the bone headline stays legible. The footage itself is the fixed
+          <ScrollVideoBackground /> mounted at the page root. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          backgroundImage:
+            "linear-gradient(105deg, rgba(10,10,10,0.92) 0%, rgba(10,10,10,0.60) 40%, rgba(10,10,10,0.22) 68%, rgba(10,10,10,0.50) 100%)",
+        }}
+      />
+      <AmbientParticles />
 
-      {/* Top-corner editorial meta — case-file vibe */}
-      <div className="pointer-events-none absolute left-6 top-32 z-10 flex items-center gap-3 font-mono text-meta uppercase tracking-[0.3em] text-newsprint/70 md:left-10">
-        <span className="inline-block h-px w-10 bg-current" />
-        <span>File · UF · Vol I · 2026</span>
+      {/* corner metadata — preserved from previous hero */}
+      <div className="pointer-events-none absolute left-5 top-24 z-10 flex items-center gap-3 font-mono text-meta uppercase tracking-[0.3em] text-newsprint/65 md:left-10 md:top-28">
+        <span className="relative inline-block h-1.5 w-1.5">
+          <span className="absolute inset-0 rounded-full bg-truth" />
+          <span className="absolute inset-0 animate-ping rounded-full bg-truth/80" />
+        </span>
+        <span>LIVE · UNFILTERED · 2026</span>
       </div>
-      <div className="pointer-events-none absolute right-6 top-32 z-10 flex items-center gap-3 font-mono text-meta uppercase tracking-[0.3em] text-newsprint/70 md:right-10">
-        <span>Section · A1</span>
+      <div className="pointer-events-none absolute right-5 top-24 z-10 hidden items-center gap-3 font-mono text-meta uppercase tracking-[0.3em] text-newsprint/65 md:right-10 md:top-28 md:flex">
+        <span>FILE · UF · VOL II</span>
         <span className="inline-block h-px w-10 bg-current" />
       </div>
 
-      <div className="relative z-10">
-        <p className="mb-6 inline-flex items-center gap-3 font-mono text-meta uppercase tracking-[0.3em] text-newsprint/70">
-          <span className="inline-block h-px w-8 bg-newsprint/50" />
-          A verified-student exposé · 5 case files unsealed
-        </p>
-
-        <h1
-          ref={titleRef}
-          className="font-display font-black uppercase leading-[0.85] tracking-[-0.03em] text-newsprint"
-        >
-          {/* clamp now starts at 2.6rem so "BROCHURES" never overflows on
-              390px-wide phones. word-break-keep-all stops mid-word wrap. */}
-          <span data-tear className="block text-[clamp(2.6rem,15vw,15rem)] [word-break:keep-all]">
-            <RevealText as="span" variant="rise" stagger={0.03} trigger="mount">
+      <div className="relative z-10 grid grid-cols-12 items-center gap-8 md:gap-10">
+        {/* LEFT — headline column. The font-size clamp caps at the size that
+            keeps "BROCHURES" inside the 5/12 column on lg+ — anything taller
+            overflows into the right-side ledger panel. */}
+        <div className="col-span-12 lg:col-span-5">
+          <h1 className="font-display font-black leading-[0.85] tracking-[-0.04em] text-newsprint">
+            <span className="block text-[clamp(2.5rem,14vw,4.25rem)] lg:text-[clamp(3rem,7vw,5.5rem)]">
               BROCHURES
-            </RevealText>
-          </span>
-          <span className="relative block text-[clamp(2.6rem,15vw,15rem)]">
-            <span data-tear className="inline-block">
-              <RevealText as="span" variant="rise" stagger={0.04} delay={0.2} trigger="mount">
-                LIE.
-              </RevealText>
             </span>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute left-0 top-1/2 inline-block h-[0.4em] w-full -translate-y-1/2 origin-left bg-truth"
-              style={{ animation: "redaction-assemble 1.4s 1.6s var(--ease-paper) forwards" }}
-            />
-          </span>
-          <span
-            data-tear
-            className="block font-serif italic text-[clamp(2.6rem,15vw,15rem)] text-truth [word-break:keep-all]"
-          >
-            <RevealText as="span" variant="rise" stagger={0.03} delay={0.7} trigger="mount">
-              STUDENTS DON&apos;T.
-            </RevealText>
-          </span>
-        </h1>
+            <span className="relative block text-[clamp(2.5rem,14vw,4.25rem)] lg:text-[clamp(3rem,7vw,5.5rem)] italic font-display">
+              <span className="relative z-10">LIE.</span>
+              {/* redaction sweep underline — uses existing keyframe */}
+              <span
+                aria-hidden
+                className="absolute left-0 top-1/2 z-0 inline-block h-[0.32em] w-[2em] -translate-y-1/2 origin-left bg-truth"
+                style={{ animation: "redaction-assemble 1.4s 0.6s var(--ease-paper) forwards" }}
+              />
+            </span>
+          </h1>
 
-        <div className="mt-12 grid grid-cols-12 gap-6">
-          <p className="col-span-12 max-w-md font-serif text-xl text-newsprint/80 md:col-span-5">
-            Line-by-line corrections to the brochures that sold us. Verified by students. Filed under truth.
+          <p className="mt-6 max-w-md font-mono text-[0.95rem] leading-relaxed text-newsprint/75">
+            We have the receipts.{" "}
+            <span className="text-newsprint [font-variant-numeric:tabular-nums]">
+              {liveStats.totalReviews.toLocaleString()}
+            </span>{" "}
+            of them.
           </p>
-          <div className="col-span-12 flex flex-wrap items-center gap-3 md:col-span-7 md:justify-end">
-            <MagneticButton as="a" href="/showcase" variant="primary">
-              Begin the showcase
-              <span aria-hidden>▶</span>
+
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <MagneticButton as="a" href="#evidence" variant="primary">
+              See the evidence
+              <span aria-hidden>→</span>
             </MagneticButton>
-            <MagneticButton as="a" href="/colleges" variant="ghost">
-              Browse all files
+            <MagneticButton as="a" href="#method" variant="ghost">
+              How it works
             </MagneticButton>
+          </div>
+        </div>
+
+        {/* RIGHT — Live Ledger 2x2 panel */}
+        <div className="col-span-12 lg:col-span-7">
+          <div
+            className="relative"
+            style={{
+              perspective: "1400px",
+              transformStyle: "preserve-3d",
+            }}
+          >
+            {/* corkboard frame — the rotation gives the whole panel an
+                "evidence pinned crooked" feel */}
+            <div
+              className="grid grid-cols-2 gap-3 md:gap-4"
+              style={{
+                transform: "rotate(-0.6deg)",
+              }}
+            >
+              <LedgerTile label="LIES UNCOVERED TODAY" rotation={-0.8} href="#evidence">
+                <LiesCounter seed={liveStats.liesUncoveredToday} />
+              </LedgerTile>
+
+              <LedgerTile label="BROCHURE VS REALITY" rotation={0.6} href="#gap">
+                <BrochureVsReality claims={liveStats.brochureVsReality} />
+              </LedgerTile>
+
+              <LedgerTile label="VERIFIED STUDENTS SPEAKING" rotation={0.4} href="#receipts">
+                <div className="h-44 md:h-48">
+                  <QuoteTicker quotes={liveStats.studentQuotes} />
+                </div>
+              </LedgerTile>
+
+              <LedgerTile label="INSTITUTIONAL TRUTH SCORE" rotation={-0.4} href="#numbers">
+                <div className="h-44 md:h-48">
+                  <TruthGauge score={liveStats.truthScore} />
+                </div>
+              </LedgerTile>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom scroll affordance — hidden on mobile (overlapped with CTAs).
-          Desktop keeps it. */}
-      <div className="absolute bottom-6 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 font-mono text-meta uppercase tracking-[0.4em] text-newsprint/60 md:flex">
-        <span>Keep scrolling — the words tear apart</span>
+      {/* scroll affordance */}
+      <div className="absolute bottom-5 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 font-mono text-meta uppercase tracking-[0.4em] text-newsprint/55 md:flex">
+        <span>Scroll · the audit continues</span>
         <span
           aria-hidden
-          className="inline-block h-10 w-px bg-current"
+          className="inline-block h-8 w-px bg-current"
           style={{ animation: "redaction-assemble 1.6s ease-in-out infinite" }}
         />
       </div>

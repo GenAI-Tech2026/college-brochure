@@ -1,0 +1,21 @@
+/* Admin-only CSS overrides. Imports after globals.css so the marketing
+   site's body { cursor: none } never leaks into /admin. */
+
+body {
+  cursor: auto !important;
+}
+
+/* Tighter form chrome in the admin — the public site's serif quotes don't
+   belong here. */
+[data-theme="admin"] input,
+[data-theme="admin"] select,
+[data-theme="admin"] textarea {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  letter-spacing: 0;
+}
+
+[data-theme="admin"] ::selection {
+  background: var(--color-truth);
+  color: var(--color-newsprint);
+}

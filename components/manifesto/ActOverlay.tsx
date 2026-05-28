@@ -99,28 +99,23 @@ function ActPodium({ act, tIn, style }: ActProps) {
 }
 
 /* ─────────────────────── Act III — The Witness
-   Editorial lower-third caption, NOT a hero headline. Lets the student own
-   the centre. Mono kicker top-left like a documentary super. */
+   Headline anchored to the TOP, matching Acts I and II, so the type leads
+   the frame while the student holds the centre below. */
 function ActStudent({ act, style }: ActProps) {
   return (
-    <div className="absolute inset-0 px-6 py-[10vh] md:px-12" style={style}>
-      {/* Top-left kicker */}
+    <div className="absolute inset-0 flex flex-col items-center justify-start px-6 pt-[14vh] text-center" style={style}>
       <p className="font-mono text-meta uppercase tracking-[0.3em] text-newsprint/60">{act.copy.label}</p>
-
-      {/* Lower-third caption */}
-      <div className="absolute bottom-[14vh] left-6 right-6 md:left-12 md:right-12">
-        <h2
-          className="font-display font-black uppercase text-newsprint text-balance max-w-3xl"
-          style={{ fontSize: "clamp(2rem, 5.6vw, 5.5rem)", lineHeight: 1, letterSpacing: "-0.02em" }}
-        >
-          {act.copy.headline}
-        </h2>
-        {act.copy.caption && (
-          <p className="mt-4 max-w-xl font-quote italic text-base text-newsprint/70 md:text-xl">
-            {act.copy.caption}
-          </p>
-        )}
-      </div>
+      <h2
+        className="mt-6 font-display font-black uppercase text-newsprint text-balance max-w-4xl"
+        style={{ fontSize: "clamp(2rem, 5.6vw, 5.5rem)", lineHeight: 1, letterSpacing: "-0.02em" }}
+      >
+        {act.copy.headline}
+      </h2>
+      {act.copy.caption && (
+        <p className="mt-4 max-w-xl font-quote italic text-base text-newsprint/70 md:text-xl">
+          {act.copy.caption}
+        </p>
+      )}
     </div>
   );
 }

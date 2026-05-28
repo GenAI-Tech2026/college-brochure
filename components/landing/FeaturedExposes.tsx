@@ -1,150 +1,169 @@
 "use client";
-import Link from "next/link";
-import { useEffect, useRef } from "react";
-import type { College, BrochureClaim } from "@/lib/mock-data/types";
-import { RedactionBar } from "@/components/RedactionBar";
-
-interface Item { college: College; claim: BrochureClaim; }
+import { useState } from "react";
+import { motion } from "framer-motion";
+import * as d3 from "d3";
+import { liveStats } from "@/lib/mock-data/home-stats";
+import type { FeaturedCase } from "@/lib/mock-data/home-stats";
 
 /**
- * Pinned horizontal scroll spread: "BROCHURE VS REALITY".
- * Five vertical pairs scroll past as the section is pinned, GSAP-driven
- * via ScrollTrigger. Each pair is a single RedactionBar with the parent
- * containing college metadata + a CTA into the case file.
+ * SECTION 2 — "RECEIPTS, NOT WORDS"
  *
- * Why pinned-horizontal here: the visual rhythm is comparative — the user
- * needs to *feel* the gap between claim and truth row after row. Vertical
- * scroll would let them blur over it.
+ * Asymmetric grid of 6 college "case file" cards. Each card shows:
+ *   - College name (small top-left)
+ *   - HUGE truth-gap percentage in the center
+ *   - Inline sparkline of the gap trend (last 7 audits)
+ *   - "Read the case file →" mono link at the bottom
+ *
+ * On hover, the card flips horizontally (CSS 3D rotateY) to reveal a
+ * single damning verified quote in italic. Implementation uses framer-
+ * motion `animate` on a `rotateY` value — keeps everything declarative
+ * and ties cleanly to the press-down on tap (mobile).
+ *
+ * Why these stats?
+ *   - The truth-gap (0-100%) is the *single* number that summarises an
+ *     audit. It's the only number a hurried visitor needs to see.
+ *   - The 7-point sparkline turns one number into a trend: is it getting
+ *     worse or better? Editorial honesty — sometimes the gap shrinks.
+ *
+ * The previous interface (`{ college, claim }`) shape was tied to CMS
+ * Brochure-Claim rows. This section now ignores props entirely (always
+ * renders the canonical featured cases from `liveStats`). When CMS data
+ * is ready, replace the `cases` variable with a server prop on the home
+ * page.
  */
-export function FeaturedExposes({ items }: { items: Item[] }) {
-  const section = useRef<HTMLElement>(null);
-  const track = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!section.current || !track.current) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) return;
-    // Pin-horizontal on a touch device is awkward: a vertical swipe is
-    // expected to advance vertical content. We disable the pin below
-    // 768 px and let the cards stack into a vertical scroll instead.
-    if (window.matchMedia("(max-width: 767px)").matches) return;
-    let cleanup: (() => void) | undefined;
-
-    (async () => {
-      const [gsapMod, stMod] = await Promise.all([
-        import("gsap"),
-        import("gsap/ScrollTrigger"),
-      ]);
-      const gsap = gsapMod.gsap ?? gsapMod.default ?? gsapMod;
-      const ScrollTrigger = stMod.ScrollTrigger ?? stMod.default;
-      gsap.registerPlugin(ScrollTrigger);
-
-      const ctx = gsap.context(() => {
-        // Recompute the scroll distance lazily on every refresh.
-        // The previous version captured `total` once at setup, BEFORE
-        // Fraunces had finished loading — so card widths were still
-        // browser-default and the pin/end measurements were short.
-        // Result: scrolling down landed in an unpinned "blank" stretch
-        // because the spacer was sized to a stale total. Scrolling
-        // back up worked because GSAP had refreshed after layout settled.
-        const getTotal = () => {
-          if (!track.current) return 0;
-          return Math.max(0, track.current.scrollWidth - window.innerWidth);
-        };
-
-        gsap.to(track.current, {
-          x: () => -getTotal(),
-          ease: "none",
-          scrollTrigger: {
-            trigger: section.current,
-            start: "top top",
-            end: () => `+=${getTotal()}`,
-            pin: true,
-            scrub: 1,
-            invalidateOnRefresh: true,
-            anticipatePin: 1,
-          },
-        });
-        // ctx.revert() (set below) handles BOTH the tween AND its
-        // ScrollTrigger AND the pin-spacer DOM cleanup — defensive against
-        // React unmounting the section before GSAP has finished tearing
-        // its own DOM apart.
-      }, section.current!);
-      cleanup = () => {
-        try { ctx.revert(); } catch { /* already gone */ }
-      };
-
-      // Force one refresh after web-font load — Fraunces hydrates the
-      // card widths AFTER initial paint, so without this the pin ends
-      // ~200–500 px too early.
-      if (typeof document !== "undefined" && document.fonts?.ready) {
-        document.fonts.ready.then(() => ScrollTrigger.refresh());
-      }
-
-      // No-op — final cleanup already set above with try/catch
-    })();
-
-    return () => cleanup?.();
-  }, []);
+export function FeaturedExposes({
+  cases = liveStats.featuredCases,
+}: { cases?: FeaturedCase[] } = {}) {
+  // Asymmetric masonry — col-spans cycle 4,4,4,5,3,4 across 12 cols.
+  // This produces visual rhythm without random sizing.
+  const layout = [
+    "col-span-12 md:col-span-4",
+    "col-span-12 md:col-span-4",
+    "col-span-12 md:col-span-4",
+    "col-span-12 md:col-span-5",
+    "col-span-12 md:col-span-3",
+    "col-span-12 md:col-span-4",
+  ];
 
   return (
-    // min-h-screen guarantees the section ALWAYS fills the viewport
-    // when pinned. Previously the section was ~736px tall against a
-    // ~900px viewport, so the bottom 160px showed whatever was below
-    // (next section / marquee) bleeding through — the "blank page"
-    // the user reported. With min-h-screen the pin covers the whole
-    // viewport for the entire horizontal-scroll duration.
-    <section
-      ref={section}
-      className="relative isolate flex min-h-screen flex-col justify-center overflow-hidden bg-ink"
-      aria-label="Brochure vs Reality featured exposés"
-    >
-      <div className="flex items-end justify-between px-6 md:px-10">
-        <h2 className="font-display text-[clamp(2.5rem,6vw,6rem)] font-black uppercase leading-[0.9] tracking-[-0.03em] text-newsprint">
-          Brochure <span className="italic text-truth">vs.</span> Reality
-        </h2>
-        <p className="hidden max-w-xs font-mono text-meta uppercase tracking-[0.3em] text-newsprint/50 md:block">
-          Five claims · Five truths · Verified · Filed under UF-26
-        </p>
-      </div>
+    <section id="receipts" className="relative bg-ink px-5 py-24 md:px-10 md:py-32">
+      <div className="mx-auto max-w-7xl">
+        <header className="mb-12 grid grid-cols-12 items-end gap-6">
+          <div className="col-span-12 md:col-span-8">
+            <p className="mb-3 inline-flex items-center gap-3 font-mono text-meta uppercase tracking-[0.3em] text-newsprint/55">
+              <span className="inline-block h-px w-8 bg-truth" />
+              SECTION · 01 · THE EVIDENCE
+            </p>
+            <h2 className="font-display text-4xl font-medium leading-[1.05] tracking-tight text-newsprint md:text-6xl">
+              Receipts, <em className="font-display italic text-truth">not words.</em>
+            </h2>
+          </div>
+        </header>
 
-      {/* Mobile (< md) stacks the cards vertically — full-width, normal
-          vertical scroll. Desktop becomes the horizontal pinned track
-          (handled by the GSAP effect above). The flex direction switches
-          at md, and w-max only applies on md+ so the mobile container
-          doesn't grow to the horizontal-track width. */}
-      <div
-        ref={track}
-        className="mt-12 flex flex-col gap-8 px-6 md:w-max md:flex-row md:items-stretch md:gap-12 md:px-10 md:[padding-right:30vw]"
-      >
-        {items.map(({ college, claim }, i) => (
-          <article
-            key={`${college.slug}-${claim.id}`}
-            className="relative w-full flex-shrink-0 border border-newsprint/10 bg-ink p-6 md:w-[60vw] md:p-12"
-          >
-            <div className="mb-8 flex items-center justify-between font-mono text-meta uppercase tracking-[0.2em] text-newsprint/60">
-              <span>Case · {college.caseFileNumber}</span>
-              <span className="text-truth">N° 0{i + 1}</span>
+        <div className="grid grid-cols-12 gap-3 md:gap-4">
+          {cases.map((c, i) => (
+            <div key={c.college} className={layout[i] ?? "col-span-12 md:col-span-4"}>
+              <ReceiptCard data={c} index={i} />
             </div>
-            <h3 className="font-display text-3xl font-black uppercase leading-tight text-newsprint md:text-5xl">
-              {college.shortName}
-            </h3>
-            <p className="mt-2 font-serif italic text-newsprint/60">{college.city} · {college.category}</p>
-            <hr className="my-8 border-newsprint/10" />
-            <RedactionBar claim={claim.claim} truth={claim.truth} delta={claim.delta} />
-            <div className="mt-10">
-              <Link
-                href={`/college/${college.slug}`}
-                data-cursor="link"
-                className="inline-flex items-center gap-3 font-mono text-meta uppercase tracking-[0.2em] text-newsprint underline-offset-4 hover:text-truth hover:underline"
-              >
-                Open the case file
-                <span aria-hidden>→</span>
-              </Link>
-            </div>
-          </article>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
+  );
+}
+
+function ReceiptCard({ data, index }: { data: FeaturedCase; index: number }) {
+  const [flipped, setFlipped] = useState(false);
+  const severe = data.truthGap >= 40;
+
+  return (
+    <div
+      className="group relative h-72 cursor-pointer [perspective:1400px]"
+      onMouseEnter={() => setFlipped(true)}
+      onMouseLeave={() => setFlipped(false)}
+      onClick={() => setFlipped((v) => !v)}
+      data-cursor="link"
+    >
+      <motion.div
+        animate={{ rotateY: flipped ? 180 : 0 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="relative h-full w-full [transform-style:preserve-3d]"
+      >
+        {/* FRONT */}
+        <div
+          className="absolute inset-0 flex flex-col justify-between border border-newsprint/15 bg-[#141210] p-5 [backface-visibility:hidden]"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <span className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-newsprint/55">
+              CASE #{String(index + 1).padStart(3, "0")}
+            </span>
+            <span className="font-mono text-[0.55rem] uppercase tracking-[0.18em] text-newsprint/40">
+              {data.college.split(",")[0]}
+            </span>
+          </div>
+
+          <div className="flex flex-col items-center">
+            <div
+              className={
+                "font-display font-black leading-none [font-variant-numeric:tabular-nums] " +
+                (severe ? "text-truth" : "text-newsprint")
+              }
+              style={{ fontSize: "clamp(4rem, 7vw, 6rem)" }}
+            >
+              {data.truthGap}
+              <span className="text-newsprint/35">%</span>
+            </div>
+            <div className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.25em] text-newsprint/55">
+              truth gap
+            </div>
+          </div>
+
+          <Sparkline values={data.trend} severe={severe} />
+
+          <div className="flex items-center justify-between font-mono text-[0.65rem] uppercase tracking-[0.2em] text-newsprint/65">
+            <span>Read the case file</span>
+            <span aria-hidden>→</span>
+          </div>
+        </div>
+
+        {/* BACK — the quote */}
+        <div
+          className="absolute inset-0 flex flex-col justify-between border border-truth/40 bg-[#1a1311] p-6 [transform:rotateY(180deg)] [backface-visibility:hidden]"
+        >
+          <span className="font-mono text-[0.6rem] uppercase tracking-[0.25em] text-truth/85">
+            VERIFIED QUOTE
+          </span>
+          <blockquote className="font-quote text-2xl italic leading-tight text-newsprint md:text-3xl">
+            “{data.quote}”
+          </blockquote>
+          <div className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-newsprint/55">
+            — Student · {data.college}
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/** Inline 7-point sparkline. d3-shape's line generator on a tiny SVG. */
+function Sparkline({ values, severe }: { values: number[]; severe: boolean }) {
+  const W = 220;
+  const H = 36;
+  const x = d3.scaleLinear().domain([0, values.length - 1]).range([0, W]);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const y = d3.scaleLinear().domain([min - 2, max + 2]).range([H - 4, 4]);
+  const line = d3
+    .line<number>()
+    .x((_, i) => x(i))
+    .y((v) => y(v))
+    .curve(d3.curveMonotoneX);
+  const d = line(values) ?? "";
+  const color = severe ? "rgb(255 67 50)" : "rgb(232 225 208 / 0.7)";
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="my-2 h-9 w-full">
+      <path d={d} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx={x(values.length - 1)} cy={y(values[values.length - 1])} r="2.5" fill={color} />
+    </svg>
   );
 }

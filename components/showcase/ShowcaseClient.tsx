@@ -115,8 +115,8 @@ export function ShowcaseClient({ colleges }: ShowcaseProps) {
       const v = lenis?.velocity ?? 0;
       // ease toward target with snappy return; cap to keep it tasteful
       current += (v - current) * 0.1;
-      const skew = Math.max(-8, Math.min(8, current * 0.04));
-      const scale = 1 - Math.min(0.05, Math.abs(current) * 0.0008);
+      const skew = Math.max(-4, Math.min(4, current * 0.025));
+      const scale = 1 - Math.min(0.03, Math.abs(current) * 0.0006);
       targets().forEach((el) => {
         el.style.transform = `skewY(${skew}deg) scaleY(${scale})`;
       });
@@ -262,7 +262,7 @@ export function ShowcaseClient({ colleges }: ShowcaseProps) {
       <section
         ref={overture}
         aria-labelledby="overture-heading"
-        className="relative grid min-h-[100svh] place-items-center px-6 pt-24 md:px-10"
+        className="relative grid min-h-[100svh] items-center justify-items-start px-6 pt-24 md:px-10"
       >
         <div className="max-w-5xl">
           <p className="font-mono text-meta uppercase tracking-[0.4em] text-newsprint/70">
@@ -270,11 +270,11 @@ export function ShowcaseClient({ colleges }: ShowcaseProps) {
           </p>
           <h1
             id="overture-heading"
-            className="mt-6 font-display text-[clamp(3.5rem,13vw,14rem)] font-black uppercase leading-[0.82] tracking-[-0.045em] text-newsprint"
+            className="mt-6 font-display text-[clamp(3rem,11vw,12rem)] font-black uppercase leading-[0.82] tracking-[-0.045em] text-newsprint"
           >
-            <RevealText as="span" trigger="mount" variant="rise">Five files.</RevealText>
+            <RevealText as="span" trigger="mount" variant="rise" className="whitespace-nowrap">Five files.</RevealText>
             <br />
-            <RevealText as="span" trigger="mount" delay={0.15} variant="rise" className="italic text-truth">
+            <RevealText as="span" trigger="mount" delay={0.15} variant="rise" className="whitespace-nowrap italic text-truth">
               Five truths.
             </RevealText>
           </h1>

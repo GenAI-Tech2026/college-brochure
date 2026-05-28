@@ -1,41 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Instrument_Serif, Inter_Tight, JetBrains_Mono } from "next/font/google";
-import "./globals.css";
-import { LenisProvider } from "@/components/providers/LenisProvider";
-import { ScrollTriggerProvider } from "@/components/providers/ScrollTriggerProvider";
-import { CustomCursor } from "@/components/CustomCursor";
-import { KonamiCode } from "@/components/KonamiCode";
-import { Nav } from "@/components/Nav";
-import { Footer } from "@/components/Footer";
 
 /**
- * All four type families loaded with `display: swap` and `variable: --font-*`
- * so Tailwind v4's @theme tokens resolve at runtime to the real fonts.
+ * Top-level passthrough.
+ *
+ * The (frontend) route group owns its own <html>/<body> + fonts + globals.css.
+ * The (payload) route group is wrapped by Payload's own RootLayout component
+ * which provides its own <html>/<body>. Having html/body here too produced
+ * nested <html><body><html><body> and a hydration crash.
+ *
+ * Next.js App Router accepts this layout — each route group layout renders
+ * exactly one <html>/<body> pair, so the rendered tree stays valid.
  */
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-display",
-  axes: ["opsz", "SOFT"],
-  display: "swap",
-});
-const instrument = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-serif",
-  display: "swap",
-});
-const interTight = Inter_Tight({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-});
-const jetbrains = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: { default: "UNFILTERED — College brochures lie. Students don't.", template: "%s · UNFILTERED" },
   description:
@@ -55,31 +30,5 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html
-      lang="en"
-      data-theme="ink"
-      className={`${fraunces.variable} ${instrument.variable} ${interTight.variable} ${jetbrains.variable}`}
-    >
-      <body>
-        <a
-          href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[99999] focus:bg-truth focus:px-3 focus:py-2 focus:text-newsprint"
-        >
-          Skip to main content
-        </a>
-        <ScrollTriggerProvider>
-          <LenisProvider>
-            <Nav />
-            <CustomCursor />
-            <KonamiCode />
-            <main id="main" tabIndex={-1}>
-              {children}
-            </main>
-            <Footer />
-          </LenisProvider>
-        </ScrollTriggerProvider>
-      </body>
-    </html>
-  );
+  return children;
 }
