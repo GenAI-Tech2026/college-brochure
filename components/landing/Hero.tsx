@@ -29,7 +29,7 @@ import { AmbientParticles } from "./hero/AmbientParticles";
  */
 export function Hero() {
   return (
-    <section className="relative isolate flex min-h-[100svh] flex-col justify-center overflow-hidden px-5 pt-28 pb-12 md:px-10 md:pt-32 md:pb-16">
+    <section className="relative isolate flex min-h-[100svh] flex-col justify-start overflow-hidden px-5 pt-28 pb-0 md:px-10 md:pt-32 md:pb-16 lg:justify-center">
       {/* Headline scrim — weights the left column over the page-level video so
           the bone headline stays legible. The footage itself is the fixed
           <ScrollVideoBackground /> mounted at the page root. */}
@@ -49,7 +49,7 @@ export function Hero() {
           <span className="absolute inset-0 rounded-full bg-truth" />
           <span className="absolute inset-0 animate-ping rounded-full bg-truth/80" />
         </span>
-        <span>LIVE · UNFILTERED · 2026</span>
+        <span>LIVE · COLLEGE BROCHURE · 2026</span>
       </div>
       <div className="pointer-events-none absolute right-5 top-24 z-10 hidden items-center gap-3 font-mono text-meta uppercase tracking-[0.3em] text-newsprint/65 md:right-10 md:top-28 md:flex">
         <span>FILE · UF · VOL II</span>
@@ -59,9 +59,15 @@ export function Hero() {
       <div className="relative z-10 grid grid-cols-12 items-center gap-8 md:gap-10">
         {/* LEFT — headline column. The font-size clamp caps at the size that
             keeps "BROCHURES" inside the 5/12 column on lg+ — anything taller
-            overflows into the right-side ledger panel. */}
-        <div className="col-span-12 lg:col-span-5">
+            overflows into the right-side ledger panel.
+            Mobile: this column fills the first viewport (centered) so the
+            "COLLEGE BROCHURES LIE." statement lands alone, full-screen; the
+            ledger tiles begin just below the fold. */}
+        <div className="col-span-12 flex min-h-[calc(100svh-11rem)] flex-col justify-center lg:col-span-5 lg:block lg:min-h-0">
           <h1 className="font-display font-black leading-[0.85] tracking-[-0.04em] text-newsprint">
+            <span className="block text-truth text-[clamp(2.5rem,14vw,4.25rem)] lg:text-[clamp(3rem,7vw,5.5rem)]">
+              YOUR COLLEGE
+            </span>
             <span className="block text-[clamp(2.5rem,14vw,4.25rem)] lg:text-[clamp(3rem,7vw,5.5rem)]">
               BROCHURES
             </span>
@@ -95,38 +101,35 @@ export function Hero() {
           </div>
         </div>
 
-        {/* RIGHT — Live Ledger 2x2 panel */}
-        <div className="col-span-12 lg:col-span-7">
+        {/* RIGHT — Live Ledger 2x2 panel.
+            Mobile: sits on a solid black, full-bleed panel so the fixed footage
+            shows only behind the headline above, not behind the cards. */}
+        <div className="col-span-12 -mx-5 bg-ink px-5 py-10 lg:col-span-7 lg:mx-0 lg:bg-transparent lg:px-0 lg:py-0">
           <div
             className="relative"
-            style={{
-              perspective: "1400px",
-              transformStyle: "preserve-3d",
-            }}
           >
             {/* corkboard frame — the rotation gives the whole panel an
-                "evidence pinned crooked" feel */}
-            <div
-              className="grid grid-cols-2 gap-3 md:gap-4"
-              style={{
-                transform: "rotate(-0.6deg)",
-              }}
-            >
-              <LedgerTile label="LIES UNCOVERED TODAY" rotation={-0.8} href="#evidence">
+                "evidence pinned crooked" feel.
+                Mobile (<sm): one tile per row, stacked in a single line — each
+                chart gets full width and is read one at a time. The crooked
+                rotation only kicks in from sm+ (it would cause horizontal
+                overflow on a full-width single column). */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 sm:[transform:rotate(-0.6deg)]">
+              <LedgerTile label="LIES UNCOVERED TODAY" rotation={-0.8} index={0} href="#evidence">
                 <LiesCounter seed={liveStats.liesUncoveredToday} />
               </LedgerTile>
 
-              <LedgerTile label="BROCHURE VS REALITY" rotation={0.6} href="#gap">
+              <LedgerTile label="BROCHURE VS REALITY" rotation={0.6} index={1} href="#gap">
                 <BrochureVsReality claims={liveStats.brochureVsReality} />
               </LedgerTile>
 
-              <LedgerTile label="VERIFIED STUDENTS SPEAKING" rotation={0.4} href="#receipts">
+              <LedgerTile label="VERIFIED STUDENTS SPEAKING" rotation={0.4} index={2} href="#receipts">
                 <div className="h-44 md:h-48">
                   <QuoteTicker quotes={liveStats.studentQuotes} />
                 </div>
               </LedgerTile>
 
-              <LedgerTile label="INSTITUTIONAL TRUTH SCORE" rotation={-0.4} href="#numbers">
+              <LedgerTile label="INSTITUTIONAL TRUTH SCORE" rotation={-0.4} index={3} href="#numbers">
                 <div className="h-44 md:h-48">
                   <TruthGauge score={liveStats.truthScore} />
                 </div>

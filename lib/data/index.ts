@@ -228,6 +228,53 @@ export async function getReviews(opts?: {
   return rows.map(rowToReview);
 }
 
+/* ─────────────────────── Truth revelations ─────────────────────── */
+
+export type TruthRevelation = {
+  id: number;
+  headline: string;
+  dek: string;
+  weight: number;
+  collegeSlug: string;
+  collegeShortName: string;
+};
+
+/**
+ * Editor-curated "what we found" headlines. Optionally scoped to one college
+ * (used on the college dossier); omit the slug for a global, weight-sorted list.
+ */
+export async function getTruthRevelations(opts?: {
+  collegeSlug?: string;
+  limit?: number;
+}): Promise<TruthRevelation[]> {
+  const limit = opts?.limit ?? 50;
+  const rows = await sql<
+    {
+      id: number;
+      headline: string;
+      dek: string;
+      weight: number;
+      slug: string;
+      short_name: string;
+    }[]
+  >`
+    SELECT t.id, t.headline, t.dek, t.weight, c.slug, c.short_name
+    FROM uf_truth_revelations t
+    JOIN uf_colleges c ON c.id = t.college_id
+    ${opts?.collegeSlug ? sql`WHERE c.slug = ${opts.collegeSlug}` : sql``}
+    ORDER BY t.weight DESC, t.id DESC
+    LIMIT ${limit}
+  `;
+  return rows.map((r) => ({
+    id: r.id,
+    headline: r.headline,
+    dek: r.dek,
+    weight: r.weight,
+    collegeSlug: r.slug,
+    collegeShortName: r.short_name,
+  }));
+}
+
 export type { College, Review };
 
 /* ─────────────────────── adapters ─────────────────────── */
@@ -251,7 +298,7 @@ function rowToCollege(c: CollegeRow, claims: BrochureClaimRow[]): College {
     tagline: c.tagline,
     brochureBlurb: c.brochure_blurb,
     brochureClaims: claims.map((cl) => ({
-      id: `${c.slug}-claim-${cl.position + 1}`,
+      id: `${c.slug}-claim-${cl.id}`,
       claim: cl.claim,
       truth: cl.truth,
       category: cl.category,

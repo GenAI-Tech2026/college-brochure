@@ -83,7 +83,7 @@ export default async function EditBrochureClaimPage({
 
         <div className="grid grid-cols-3 gap-5">
           <SelectField label="Category" name="category" options={CATEGORIES} defaultValue={row.category} />
-          <TextField label="Delta (0–100)" name="delta" type="number" defaultValue={row.delta} />
+          <TextField label="Delta (0–100)" name="delta" type="number" defaultValue={row.delta} min={0} max={100} />
           <TextField label="Position" name="position" type="number" defaultValue={row.position} />
         </div>
 

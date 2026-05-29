@@ -1,9 +1,12 @@
 import { ImageResponse } from "@vercel/og";
 import { getCollegeBySlug } from "@/lib/data";
+import { computeRealityGap } from "@/lib/utils/reality";
 
 // Node runtime — we read from Postgres via lib/data, which uses the
 // `postgres` driver. The Edge runtime lacks Node's perf_hooks.
 export const runtime = "nodejs";
+// Always reflect current DB state (truth score, etc.) in the OG image.
+export const dynamic = "force-dynamic";
 
 /**
  * Dynamic OG image per college. Renders a 1200x630 editorial composition:
@@ -14,6 +17,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const slug = searchParams.get("slug");
   const college = slug ? await getCollegeBySlug(slug) : null;
+  const gap = college ? computeRealityGap(college) : null;
 
   return new ImageResponse(
     (
@@ -31,7 +35,7 @@ export async function GET(req: Request) {
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18 }}>
-          <span style={{ letterSpacing: 4, textTransform: "uppercase" }}>UNFILTERED</span>
+          <span style={{ letterSpacing: 4, textTransform: "uppercase" }}>College Brochure</span>
           <span style={{ letterSpacing: 4, textTransform: "uppercase", color: "#E63946" }}>
             Case · {college?.caseFileNumber ?? "UF-0000"}
           </span>
@@ -50,11 +54,17 @@ export async function GET(req: Request) {
               marginTop: 10,
             }}
           >
-            {(college?.shortName ?? "UNFILTERED").toUpperCase()}
+            {(college?.shortName ?? "COLLEGE BROCHURE").toUpperCase()}
           </span>
           <span style={{ fontSize: 32, fontStyle: "italic", color: "#E63946", marginTop: 16 }}>
             {college?.tagline ?? "Brochures lie. Students don't."}
           </span>
+          {gap && gap.overstatementPct > 0 && (
+            <span style={{ fontSize: 40, fontWeight: 900, letterSpacing: -1, marginTop: 22 }}>
+              Brochure overstates reality by{" "}
+              <span style={{ color: "#E63946" }}>{gap.overstatementPct}%</span>
+            </span>
+          )}
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 22, color: "rgba(239,233,218,0.8)" }}>

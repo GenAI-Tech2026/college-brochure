@@ -1,13 +1,20 @@
 import { notFound } from "next/navigation";
-import { getAllColleges, getCollegeBySlug, getReviews } from "@/lib/data";
+import { getAllColleges, getCollegeBySlug, getReviews, getTruthRevelations } from "@/lib/data";
 import { FileHeader } from "@/components/college/FileHeader";
+import { RealitySnapshot } from "@/components/college/RealitySnapshot";
+import { VerificationStrip } from "@/components/college/VerificationStrip";
 import { RedactionSection } from "@/components/college/RedactionSection";
 import { TruthOMeter } from "@/components/college/TruthOMeter";
 import { EvidenceWall } from "@/components/college/EvidenceWall";
 import { DataAutopsy } from "@/components/college/DataAutopsy";
 import { LongRead } from "@/components/college/LongRead";
 import { SubmitCTA } from "@/components/college/SubmitCTA";
+import { TruthRevelations } from "@/components/college/TruthRevelations";
 import { MarqueeStrip } from "@/components/MarqueeStrip";
+
+// Render on every request so admin edits, new reviews, and recomputed truth
+// scores show immediately. generateStaticParams still warms known slugs.
+export const dynamic = "force-dynamic";
 
 /**
  * Pre-render every college page at build time. Each is a unique composition
@@ -26,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: college.name,
     description: `${college.tagline} — Truth Score ${college.truthScore}/100 from ${college.reviewCount} reviews.`,
     openGraph: {
-      title: `${college.name} · UNFILTERED Case ${college.caseFileNumber}`,
+      title: `${college.name} · College Brochure Case ${college.caseFileNumber}`,
       description: college.tagline,
       images: [`/api/og?slug=${college.slug}`],
     },
@@ -37,7 +44,10 @@ export default async function CollegePage({ params }: { params: Promise<{ slug: 
   const { slug } = await params;
   const college = await getCollegeBySlug(slug);
   if (!college) return notFound();
-  const reviews = await getReviews({ collegeSlug: slug, limit: 30 });
+  const [reviews, revelations] = await Promise.all([
+    getReviews({ collegeSlug: slug, limit: 30 }),
+    getTruthRevelations({ collegeSlug: slug }),
+  ]);
 
   return (
     <article style={{ ["--accent" as never]: college.primaryAccent }}>
@@ -54,7 +64,14 @@ export default async function CollegePage({ params }: { params: Promise<{ slug: 
         size="lg"
       />
 
+      {/* Reality stated plainly + proven — before the interactive theatre,
+          so even a passive scroller leaves knowing the verdict. */}
+      <RealitySnapshot college={college} />
+      <VerificationStrip college={college} reviews={reviews} />
+
       <RedactionSection college={college} />
+
+      <TruthRevelations items={revelations} />
 
       <TruthOMeter score={college.truthScore} accent={college.primaryAccent} />
 

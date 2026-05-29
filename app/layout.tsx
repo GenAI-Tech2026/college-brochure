@@ -12,11 +12,11 @@ import type { Metadata, Viewport } from "next";
  * exactly one <html>/<body> pair, so the rendered tree stays valid.
  */
 export const metadata: Metadata = {
-  title: { default: "UNFILTERED — College brochures lie. Students don't.", template: "%s · UNFILTERED" },
+  title: { default: "College Brochure — Brochures lie. Students don't.", template: "%s · College Brochure" },
   description:
     "A verified-peer-review platform exposing the gap between college brochures and student reality.",
   openGraph: {
-    title: "UNFILTERED",
+    title: "College Brochure",
     description: "Brochures lie. Students don't.",
     type: "website",
   },

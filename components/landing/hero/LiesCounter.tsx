@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLiveTicker } from "@/lib/hooks/useLiveTicker";
 
@@ -26,6 +27,23 @@ export function LiesCounter({ seed }: { seed: number }) {
     (prev) => prev + 1 + Math.floor(Math.random() * 3), // +1..+3
     { min: 3000, max: 7000 },
   );
+
+  // "updated Ns ago" — real elapsed time since the last tick, not a fake
+  // constant. We stamp the time the value last changed and re-render once a
+  // second so the caption counts up, then resets to "just now" on each tick.
+  const lastChange = useRef(0);
+  const prevValue = useRef(value);
+  const [now, setNow] = useState(0);
+  if (prevValue.current !== value) {
+    prevValue.current = value;
+    lastChange.current = now;
+  }
+  useEffect(() => {
+    const id = setInterval(() => setNow((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const secondsAgo = Math.max(0, now - lastChange.current);
+  const agoLabel = secondsAgo < 2 ? "just now" : `updated ${secondsAgo}s ago`;
 
   // Pad to the seed's width so we don't reflow when the count grows by an order
   // of magnitude — over a long session the seed at 12k will probably stay 5
@@ -65,12 +83,12 @@ export function LiesCounter({ seed }: { seed: number }) {
           );
         })}
       </div>
-      <div className="mt-3 flex items-center gap-2 font-mono text-[0.65rem] uppercase tracking-[0.25em] text-newsprint/55">
+      <div className="mt-3 flex items-center gap-2 font-mono text-[0.66rem] uppercase tracking-[0.2em] text-newsprint/70">
         <span className="relative inline-block h-1.5 w-1.5">
           <span className="absolute inset-0 rounded-full bg-truth" />
           <span className="absolute inset-0 animate-ping rounded-full bg-truth/80" />
         </span>
-        <span>updated 0.3s ago</span>
+        <span className="[font-variant-numeric:tabular-nums]">{agoLabel}</span>
       </div>
     </div>
   );

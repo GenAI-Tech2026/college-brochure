@@ -17,7 +17,7 @@ import { StudioNav } from "@/components/admin/StudioNav";
  * when a session exists.
  */
 export const metadata = {
-  title: { default: "Admin · UNFILTERED", template: "%s · Admin · UNFILTERED" },
+  title: { default: "Admin · College Brochure", template: "%s · Admin · College Brochure" },
 };
 
 const fraunces = Fraunces({
@@ -59,8 +59,8 @@ export default async function StudioLayout({
                 href="/admin"
                 className="flex items-center gap-2 border-b border-newsprint/10 px-6 py-5 font-display text-lg font-black uppercase tracking-tight text-newsprint"
               >
-                UN
-                <span className="text-truth">FILTERED</span>
+                College
+                <span className="text-truth">Brochure</span>
                 <span className="ml-auto font-mono text-meta uppercase tracking-[0.25em] text-newsprint/55">
                   admin
                 </span>

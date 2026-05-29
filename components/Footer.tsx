@@ -29,12 +29,12 @@ export function Footer() {
             <span className="italic text-truth">who lived it.</span>
           </h3>
           <p className="mt-6 max-w-md font-serif text-lg text-ink/70">
-            UNFILTERED is a not-for-profit collective of verified students publishing
+            College Brochure is a not-for-profit collective of verified students publishing
             line-by-line corrections to the brochures that sold them.
           </p>
         </div>
 
-        <nav aria-label="Footer" className="col-span-6 md:col-span-3">
+        <nav aria-label="Footer" className="col-span-12 md:col-span-7 md:justify-self-end">
           <h4 className="mb-4 font-mono text-meta uppercase tracking-[0.2em] text-ink/50">Sections</h4>
           <ul className="space-y-2 font-serif text-lg text-ink">
             <li><Link className="highlight-link" data-cursor="link" href="/colleges">The File</Link></li>
@@ -43,17 +43,6 @@ export function Footer() {
             <li><Link className="highlight-link" data-cursor="link" href="/submit">Submit your truth</Link></li>
           </ul>
         </nav>
-
-        <div className="col-span-6 md:col-span-4">
-          <h4 className="mb-4 font-mono text-meta uppercase tracking-[0.2em] text-ink/50">Colophon</h4>
-          <p className="font-serif text-ink/80">
-            Typeset in Fraunces, Instrument Serif, Inter Tight and JetBrains Mono.
-            Built with Next.js, GSAP, Lenis and PixiJS. No third-party trackers.
-          </p>
-          <p className="mt-4 font-mono text-meta uppercase tracking-[0.2em] text-ink/50">
-            UF-2026 · CASE FILES IN PROGRESS
-          </p>
-        </div>
       </div>
       <div className="border-t border-ink/20 px-6 py-6 md:px-10">
         <p className="font-mono text-meta uppercase tracking-[0.3em] text-ink/60">

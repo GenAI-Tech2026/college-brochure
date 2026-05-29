@@ -266,7 +266,7 @@ export function ShowcaseClient({ colleges }: ShowcaseProps) {
       >
         <div className="max-w-5xl">
           <p className="font-mono text-meta uppercase tracking-[0.4em] text-newsprint/70">
-            Now showing · UNFILTERED · 2026
+            Now showing · COLLEGE BROCHURE · 2026
           </p>
           <h1
             id="overture-heading"
@@ -334,7 +334,7 @@ export function ShowcaseClient({ colleges }: ShowcaseProps) {
             <RevealText as="span" variant="rise">Five chapters.</RevealText>
             <br />
             <RevealText as="span" variant="rise" delay={0.15} className="italic text-truth">
-              One unfiltered file.
+              One College Brochure file.
             </RevealText>
           </h2>
           <p className="mx-auto mt-8 max-w-2xl font-serif text-2xl italic text-newsprint/80">

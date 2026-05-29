@@ -199,7 +199,7 @@ export function MultiStepForm({ defaultCollege }: { defaultCollege?: string }) {
             {step === 4 && (
               <FormStep>
                 <div className="border border-newsprint/30 p-6 font-serif text-newsprint/80">
-                  <p>By filing, you confirm the events you describe occurred, the brochure language you cite is accurate, and you understand UNFILTERED publishes pseudonymously and never sells identity data.</p>
+                  <p>By filing, you confirm the events you describe occurred, the brochure language you cite is accurate, and you understand College Brochure publishes pseudonymously and never sells identity data.</p>
                 </div>
                 <Field label="" error={errors.consent?.message}>
                   <label className="flex cursor-pointer items-start gap-3 text-newsprint">

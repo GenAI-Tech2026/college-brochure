@@ -94,6 +94,8 @@ export default async function EditVerifiedStudentPage({
             name="trust_score"
             type="number"
             defaultValue={row.trust_score}
+            min={0}
+            max={100}
           />
         </div>
 

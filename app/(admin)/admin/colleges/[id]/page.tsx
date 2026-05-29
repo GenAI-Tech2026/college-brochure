@@ -89,10 +89,17 @@ export default async function EditCollegePage({
           <TextField label="Primary accent" name="primary_accent" defaultValue={row.primary_accent} hint="hex e.g. #FF4332" />
           <SelectField label="Category" name="category" options={CATEGORIES} defaultValue={row.category} />
           <SelectField label="Tier" name="tier" options={TIERS} defaultValue={row.tier} />
-          <TextField label="Truth score" name="truth_score" type="number" defaultValue={row.truth_score} hint="0–100" />
           <TextField label="Fingerprint seed" name="fingerprint_seed" defaultValue={row.fingerprint_seed} />
-          <TextField label="Review count" name="review_count" type="number" defaultValue={row.review_count} />
-          <TextField label="Verified count" name="verified_count" type="number" defaultValue={row.verified_count} />
+        </div>
+
+        {/* Derived — computed from reviews + brochure claims, not editable. */}
+        <div className="grid grid-cols-3 gap-5 border border-newsprint/10 bg-newsprint/[0.03] p-4">
+          <ReadOnly label="Truth score" value={`${row.truth_score} / 100`} />
+          <ReadOnly label="Review count" value={String(row.review_count)} />
+          <ReadOnly label="Verified count" value={String(row.verified_count)} />
+          <p className="col-span-3 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-newsprint/40">
+            Auto-computed. Use “Recompute scores” on the Colleges list to refresh.
+          </p>
         </div>
 
         <TextField label="Tagline" name="tagline" defaultValue={row.tagline} />
@@ -126,6 +133,19 @@ export default async function EditCollegePage({
       </form>
 
       <form id="delete-college" action={del} className="hidden" />
+    </div>
+  );
+}
+
+function ReadOnly({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <span className="block font-mono text-meta uppercase tracking-[0.25em] text-newsprint/55">
+        {label}
+      </span>
+      <span className="mt-2 block font-display text-2xl font-medium text-newsprint [font-variant-numeric:tabular-nums]">
+        {value}
+      </span>
     </div>
   );
 }

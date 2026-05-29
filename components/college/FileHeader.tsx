@@ -2,6 +2,7 @@
 import { useEffect, useRef } from "react";
 import { fingerprintPaths } from "@/lib/utils/fingerprint";
 import { safeAccentOnDark } from "@/lib/utils/accent";
+import { computeRealityGap } from "@/lib/utils/reality";
 import { RevealText } from "@/components/RevealText";
 import type { College } from "@/lib/mock-data/types";
 
@@ -36,6 +37,7 @@ export function FileHeader({ college }: { college: College }) {
 
   const prints = fingerprintPaths(college.fingerprintSeed, 20);
   const accent = safeAccentOnDark(college.primaryAccent);
+  const gap = computeRealityGap(college);
 
   return (
     <section
@@ -63,7 +65,25 @@ export function FileHeader({ college }: { college: College }) {
         &ldquo;{college.tagline}&rdquo;
       </p>
 
-      <div className="mt-20 grid grid-cols-3 gap-6 border-t border-newsprint/10 pt-10">
+      {/* The one-line verdict — the single number a visitor remembers and
+          shares. Derived from the mean overstatement across every claim. */}
+      {gap.overstatementPct > 0 && (
+        <p className="mt-10 max-w-3xl font-display text-[clamp(1.5rem,3.6vw,2.75rem)] font-black leading-[1.05] tracking-[-0.02em] text-newsprint">
+          This brochure overstates reality by{" "}
+          <span className="text-truth [font-variant-numeric:tabular-nums]">
+            {gap.overstatementPct}%
+          </span>
+          .
+          {gap.worstClaim && (
+            <span className="mt-2 block font-mono text-meta font-normal uppercase tracking-[0.2em] text-newsprint/60">
+              Worst offender · {gap.worstClaim.category.replace("-", " ")} ·
+              overstated {gap.worstClaim.delta}%
+            </span>
+          )}
+        </p>
+      )}
+
+      <div className="mt-16 grid grid-cols-3 gap-6 border-t border-newsprint/10 pt-10">
         {[
           { label: "Truth Score", value: college.truthScore, suffix: "/100" },
           { label: "Reviews collected", value: college.reviewCount, suffix: "" },

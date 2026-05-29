@@ -266,3 +266,57 @@ html.lenis, html.lenis body { height: auto; }
   51%  { transform-origin: right; }
   100% { transform: scaleX(0); transform-origin: right; }
 }
+
+/* ───────────────────── First-visit prologue ─────────────────────
+   One-time intro overlay (components/IntroPrologue.tsx). The no-flash
+   rule below is paired with an inline <body> script that adds
+   `.uf-prologue-seen` to <html> before first paint, so returning
+   visitors never see the overlay flash. */
+html.uf-prologue-seen #uf-prologue { display: none !important; }
+
+#uf-prologue { animation: uf-prologue-in 0.5s var(--ease-paper) both; }
+#uf-prologue[data-leaving="true"] {
+  animation: uf-prologue-out 0.65s var(--ease-paper) forwards;
+}
+
+/* staggered line reveal — delays are set inline per line */
+.uf-pl-line {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: uf-pl-rise 0.7s var(--ease-expo) forwards;
+}
+
+/* determinate loading bar — fills left→right over its duration, stays full */
+.uf-bar {
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: uf-bar-fill var(--uf-bar-dur, 1.5s) var(--ease-paper) forwards;
+}
+
+@keyframes uf-prologue-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes uf-prologue-out { to { opacity: 0; transform: scale(1.02); } }
+@keyframes uf-pl-rise      { to { opacity: 1; transform: translateY(0); } }
+@keyframes uf-bar-fill     { to { transform: scaleX(1); } }
+
+/* Ledger hero tiles — staggered fade-in entrance. Delay is set inline per
+   tile via --uf-tile-delay. Opacity-only (no transform) so the tile never
+   gets parked on a GPU layer that would rasterize — and blur — its text.
+   The component also strips this class once the animation completes, so the
+   settled tile paints text crisply in the main layer. */
+.uf-tile-enter {
+  opacity: 0;
+  animation: uf-tile-in 0.7s var(--ease-expo) both;
+  animation-delay: var(--uf-tile-delay, 0s);
+}
+@keyframes uf-tile-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #uf-prologue { animation: none; }
+  #uf-prologue[data-leaving="true"] { animation: none; opacity: 0; }
+  .uf-pl-line { animation: none; opacity: 1; transform: none; }
+  .uf-bar { animation: none; transform: scaleX(1); }
+  .uf-tile-enter { animation: none; opacity: 1; }
+}

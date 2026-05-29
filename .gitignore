@@ -39,8 +39,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# user uploads (receipts) — local-disk storage
+/public/uploads
+
 # payload
 /payload.db
 /payload.db-journal
 payload-types.ts
 /media
+
+# QA artifacts
+/qa

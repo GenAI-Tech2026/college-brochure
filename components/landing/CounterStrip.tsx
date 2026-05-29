@@ -60,7 +60,7 @@ export function CounterStrip({ stats }: { stats?: Partial<Stats> }) {
   return (
     <section
       id="numbers"
-      className="relative bg-paper px-5 py-24 text-ink md:px-10 md:py-32"
+      className="relative bg-[#E7E5E0] px-5 py-24 text-ink md:px-10 md:py-32"
     >
       {/* paper-inset edge — thin top and bottom rules that read like a
           magazine inset page being pasted onto the dark layout */}
@@ -68,16 +68,14 @@ export function CounterStrip({ stats }: { stats?: Partial<Stats> }) {
       <div className="absolute inset-x-0 bottom-0 h-1 bg-ink" aria-hidden />
 
       <div className="mx-auto max-w-7xl">
-        <header className="mb-14 grid grid-cols-12 items-end gap-6">
-          <div className="col-span-12 md:col-span-8">
-            <p className="mb-3 inline-flex items-center gap-3 font-mono text-meta uppercase tracking-[0.3em] text-ink/60">
-              <span className="inline-block h-px w-8 bg-truth" />
-              SECTION · 03 · BY THE NUMBERS
-            </p>
-            <h2 className="font-display text-4xl font-medium leading-[1.05] tracking-tight text-ink md:text-6xl">
-              By the <em className="font-display italic text-truth">numbers.</em>
-            </h2>
-          </div>
+        <header className="mb-14 text-center">
+          <p className="mb-3 inline-flex items-center gap-3 font-mono text-meta uppercase tracking-[0.3em] text-ink/60">
+            <span className="inline-block h-px w-8 bg-truth" />
+            SECTION · 03 · BY THE NUMBERS
+          </p>
+          <h2 className="font-display text-4xl font-medium leading-[1.05] tracking-tight text-ink md:text-6xl">
+            By the <em className="font-display italic text-truth">numbers.</em>
+          </h2>
         </header>
 
         <div className="grid grid-cols-12 gap-8 md:gap-10">
@@ -86,7 +84,7 @@ export function CounterStrip({ stats }: { stats?: Partial<Stats> }) {
               key={t.caption}
               className={
                 "col-span-12 sm:col-span-6 lg:col-span-4 " +
-                "border-t border-ink/30 pt-6 "
+                "border-t border-ink/30 pt-6 text-center "
               }
             >
               <BigNumber
@@ -193,7 +191,7 @@ function BigNumber({
       {bar && (
         <span
           aria-hidden
-          className="mt-2 block h-1 origin-left bg-truth"
+          className="mx-auto mt-2 block h-1 w-2/3 origin-center bg-truth"
           style={{
             transform: `scaleX(${Math.min(1, val / target)})`,
             transition: "transform 200ms linear",

@@ -1,7 +1,7 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useFilterStore } from "@/lib/store/filterStore";
 import type { College } from "@/lib/mock-data/types";
 import { fingerprintPaths } from "@/lib/utils/fingerprint";
@@ -26,6 +26,12 @@ const sorts = [
  */
 export function ExplorerClient({ colleges }: { colleges: College[] }) {
   const { query, tier, category, minTruthScore, sortBy, set, reset } = useFilterStore();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeCount =
+    (tier !== "all" ? 1 : 0) +
+    (category !== "all" ? 1 : 0) +
+    (minTruthScore > 0 ? 1 : 0) +
+    (sortBy !== "truth-desc" ? 1 : 0);
 
   const filtered = useMemo(() => {
     let arr = colleges.slice();
@@ -91,57 +97,100 @@ export function ExplorerClient({ colleges }: { colleges: College[] }) {
         </aside>
       </header>
 
-      {/* Filter bar */}
-      <div className="mb-12 grid grid-cols-12 gap-4 border-y border-newsprint/10 py-6">
-        <div className="col-span-12 md:col-span-4">
-          <label className="block">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-newsprint/50">
-              Search by name or city
-            </span>
+      {/* Filter bar — slim: search + a Filters button that reveals the rest. */}
+      <div className="mb-12 border-y border-newsprint/10 py-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="relative min-w-[200px] flex-1">
+            <span className="sr-only">Search by name or city</span>
             <input
               value={query}
               onChange={(e) => set({ query: e.target.value })}
-              placeholder="Pondicherry, Bombay, Sai…"
-              className="mt-2 w-full border-b border-newsprint/30 bg-transparent pb-1 font-display text-2xl text-newsprint placeholder:text-newsprint/30 focus:border-truth focus:outline-none"
+              placeholder="Search by name or city…"
+              className="w-full border-b border-newsprint/30 bg-transparent pb-1 font-display text-xl text-newsprint placeholder:text-newsprint/30 focus:border-truth focus:outline-none"
             />
           </label>
-        </div>
 
-        <FilterGroup label="Tier" options={tiers as unknown as string[]} value={tier} onChange={(v) => set({ tier: v as typeof tier })} />
-        <FilterGroup label="Category" options={categories as unknown as string[]} value={category} onChange={(v) => set({ category: v as typeof category })} />
-
-        <div className="col-span-12 md:col-span-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-newsprint/50">Sort</p>
-          <select
-            value={sortBy}
-            onChange={(e) => set({ sortBy: e.target.value as typeof sortBy })}
-            className="mt-2 w-full border-b border-newsprint/30 bg-transparent pb-1 font-mono text-meta uppercase tracking-[0.2em] text-newsprint focus:border-truth focus:outline-none"
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((o) => !o)}
+            aria-expanded={filtersOpen}
+            data-cursor="link"
+            className={cn(
+              "inline-flex items-center gap-2 border px-4 py-2 font-mono text-meta uppercase tracking-[0.2em] transition-colors",
+              filtersOpen || activeCount > 0
+                ? "border-truth text-newsprint"
+                : "border-newsprint/25 text-newsprint/75 hover:border-newsprint/60",
+            )}
           >
-            {sorts.map((s) => (
-              <option key={s.v} value={s.v} className="bg-ink">
-                {s.l}
-              </option>
-            ))}
-          </select>
+            Filters
+            {activeCount > 0 && (
+              <span className="grid h-4 min-w-4 place-items-center rounded-full bg-truth px-1 text-[10px] leading-none text-newsprint">
+                {activeCount}
+              </span>
+            )}
+            <span aria-hidden className={cn("transition-transform duration-300", filtersOpen && "rotate-180")}>
+              ▾
+            </span>
+          </button>
+
+          {(activeCount > 0 || query) && (
+            <button
+              type="button"
+              onClick={reset}
+              className="font-mono text-meta uppercase tracking-[0.2em] text-truth hover:underline"
+            >
+              Reset
+            </button>
+          )}
         </div>
 
-        <div className="col-span-12 md:col-span-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-newsprint/50">
-            Min. truth score · {minTruthScore}
-          </p>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={minTruthScore}
-            onChange={(e) => set({ minTruthScore: parseInt(e.target.value) })}
-            className="mt-3 w-full accent-truth"
-            aria-label="Minimum truth score"
-          />
-          <button onClick={reset} className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-truth hover:underline">
-            Reset filters
-          </button>
-        </div>
+        <AnimatePresence initial={false}>
+          {filtersOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="grid grid-cols-1 gap-6 pt-6 sm:grid-cols-2 md:grid-cols-4">
+                <FilterGroup label="Tier" options={tiers as unknown as string[]} value={tier} onChange={(v) => set({ tier: v as typeof tier })} />
+                <FilterGroup label="Category" options={categories as unknown as string[]} value={category} onChange={(v) => set({ category: v as typeof category })} />
+
+                <div>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-newsprint/50">Sort</p>
+                  <select
+                    value={sortBy}
+                    aria-label="Sort colleges"
+                    onChange={(e) => set({ sortBy: e.target.value as typeof sortBy })}
+                    className="mt-2 w-full border-b border-newsprint/30 bg-transparent pb-1 font-mono text-meta uppercase tracking-[0.2em] text-newsprint focus:border-truth focus:outline-none"
+                  >
+                    {sorts.map((s) => (
+                      <option key={s.v} value={s.v} className="bg-ink">
+                        {s.l}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-newsprint/50">
+                    Min. truth score · {minTruthScore}
+                  </p>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={minTruthScore}
+                    onChange={(e) => set({ minTruthScore: parseInt(e.target.value) })}
+                    className="mt-3 w-full accent-truth"
+                    aria-label="Minimum truth score"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* FLIP grid */}
@@ -184,7 +233,7 @@ function FilterGroup({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="col-span-12 md:col-span-2">
+    <div>
       <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-newsprint/50">{label}</p>
       <div className="mt-2 flex flex-wrap gap-1">
         {options.map((o) => (

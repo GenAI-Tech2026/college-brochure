@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { sql } from "@/lib/db";
 
 /**
- * Minimal cookie-session auth for /studio.
+ * Minimal cookie-session auth for /admin.
  *
  * - Passwords stored as bcrypt hashes in uf_users.password_hash
  * - Sessions are random 32-byte hex stored in uf_sessions, ttl 30 days

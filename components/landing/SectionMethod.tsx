@@ -24,7 +24,9 @@ import { useEffect, useRef } from "react";
  */
 export function SectionMethod() {
   const wrap = useRef<HTMLDivElement>(null);
+  const tl = useRef<HTMLOListElement>(null);
 
+  // Desktop horizontal pipeline — one-shot arm when it scrolls into view.
   useEffect(() => {
     if (!wrap.current) return;
     const el = wrap.current;
@@ -46,8 +48,49 @@ export function SectionMethod() {
     return () => io.disconnect();
   }, []);
 
+  // Mobile roadmap — reveal each stop as it scrolls into view, and grow the
+  // central rail. Per-step (not one-shot) so it animates down as you scroll.
+  useEffect(() => {
+    const root = tl.current;
+    if (!root) return;
+    const steps = Array.from(root.querySelectorAll<HTMLElement>(".tl-step"));
+    const rail = root.querySelector<HTMLElement>(".tl-rail-fill");
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      steps.forEach((s) => (s.dataset.visible = "1"));
+      if (rail) rail.dataset.grow = "1";
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            (e.target as HTMLElement).dataset.visible = "1";
+            io.unobserve(e.target);
+          }
+        }
+      },
+      { threshold: 0.55, rootMargin: "0px 0px -10% 0px" },
+    );
+    steps.forEach((s) => io.observe(s));
+    const railIo = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting && rail) {
+          rail.dataset.grow = "1";
+          railIo.disconnect();
+        }
+      },
+      { threshold: 0.05 },
+    );
+    railIo.observe(root);
+    return () => {
+      io.disconnect();
+      railIo.disconnect();
+    };
+  }, []);
+
   const steps: { label: string; sub: string; icon: React.ReactNode }[] = [
-    { label: "Verified", sub: ".edu email", icon: <EnvelopeIcon /> },
+    { label: "Verified", sub: "", icon: <EnvelopeIcon /> },
     { label: "Cross-checked", sub: "3 independent sources", icon: <PagesIcon /> },
     { label: "Documented", sub: "evidence filed", icon: <FolderIcon /> },
     { label: "Published", sub: "case unsealed", icon: <PressIcon /> },
@@ -56,31 +99,30 @@ export function SectionMethod() {
   return (
     <section id="method" className="relative bg-ink px-5 py-24 md:px-10 md:py-32">
       <div className="mx-auto max-w-7xl">
-        <header className="mb-14 grid grid-cols-12 items-end gap-6">
-          <div className="col-span-12 md:col-span-8">
-            <p className="mb-3 inline-flex items-center gap-3 font-mono text-meta uppercase tracking-[0.3em] text-newsprint/55">
-              <span className="inline-block h-px w-8 bg-truth" />
-              SECTION · 02 · THE METHOD
-            </p>
-            <h2 className="font-display text-4xl font-medium leading-[1.05] tracking-tight text-newsprint md:text-6xl">
-              How we know <em className="font-display italic text-truth">it&apos;s true.</em>
-            </h2>
-          </div>
+        <header className="mb-14 text-center">
+          <p className="mb-3 inline-flex items-center gap-3 font-mono text-meta uppercase tracking-[0.3em] text-newsprint/55">
+            <span className="inline-block h-px w-8 bg-truth" />
+            SECTION · 02 · THE METHOD
+          </p>
+          <h2 className="font-display text-4xl font-medium leading-[1.05] tracking-tight text-newsprint md:text-6xl">
+            How we know <em className="font-display italic text-truth">it&apos;s true.</em>
+          </h2>
         </header>
 
-        <div ref={wrap} data-state="idle" className="pipeline relative">
+        {/* DESKTOP — horizontal 4-step pipeline */}
+        <div ref={wrap} data-state="idle" className="pipeline relative hidden md:block">
           {/* connector line — animates left-to-right when armed */}
           <div
             aria-hidden
-            className="absolute left-[7%] right-[7%] top-[58px] hidden h-px bg-newsprint/15 md:block"
+            className="absolute left-[7%] right-[7%] top-[58px] h-px bg-newsprint/15"
           />
           <div
             aria-hidden
-            className="pipeline-line absolute left-[7%] top-[58px] hidden h-px origin-left scale-x-0 bg-truth md:block"
+            className="pipeline-line absolute left-[7%] top-[58px] h-px origin-left scale-x-0 bg-truth"
             style={{ width: "86%" }}
           />
 
-          <div className="grid grid-cols-1 gap-10 md:grid-cols-4 md:gap-6">
+          <div className="grid grid-cols-4 gap-6">
             {steps.map((s, i) => (
               <div key={s.label} className="pipeline-step relative flex flex-col items-center text-center" style={{ ["--idx" as string]: i }}>
                 <div className="relative grid h-28 w-28 place-items-center rounded-full border border-newsprint/15 bg-[#141210]">
@@ -90,17 +132,52 @@ export function SectionMethod() {
                   <div className="h-10 w-10 text-newsprint">{s.icon}</div>
                 </div>
                 <div className="mt-5 font-display text-xl text-newsprint">{s.label}</div>
-                <div className="mt-1 font-mono text-[0.65rem] uppercase tracking-[0.22em] text-newsprint/55">
-                  {s.sub}
-                </div>
+                {s.sub && (
+                  <div className="mt-1 font-mono text-[0.65rem] uppercase tracking-[0.22em] text-newsprint/55">
+                    {s.sub}
+                  </div>
+                )}
               </div>
             ))}
           </div>
-
-          <p className="mx-auto mt-14 max-w-xl text-center font-mono text-sm text-newsprint/70">
-            Verified by .edu emails. Cross-referenced against three independent sources.
-          </p>
         </div>
+
+        {/* MOBILE — workflow roadmap (same left-rail representation as before:
+            nodes + rail down one side, explaining text beside them). The whole
+            block is centered on the page rather than left-aligned. */}
+        <ol ref={tl} className="pipeline relative mx-auto w-fit md:hidden">
+          {/* rail (track + animated truth fill) */}
+          <span aria-hidden className="absolute bottom-12 left-10 top-12 w-px -translate-x-1/2 bg-newsprint/15" />
+          <span aria-hidden className="tl-rail-fill absolute left-10 top-12 w-px -translate-x-1/2 bg-truth" style={{ bottom: "3rem" }} />
+
+          {steps.map((s, i) => (
+            <li
+              key={s.label}
+              className="tl-step relative flex items-center py-6 pl-32"
+              data-side="right"
+            >
+              <span className="tl-node absolute left-10 top-1/2 z-10 grid h-20 w-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-newsprint/15 bg-[#141210]">
+                <span className="absolute -top-3 whitespace-nowrap font-mono text-[0.62rem] uppercase tracking-[0.2em] text-newsprint/55">
+                  0{i + 1}
+                </span>
+                <span className="h-10 w-10 text-newsprint">{s.icon}</span>
+              </span>
+
+              <div className="tl-card text-left">
+                <div className="font-display text-2xl text-newsprint">{s.label}</div>
+                {s.sub && (
+                  <div className="mt-1 font-mono text-[0.7rem] uppercase tracking-[0.2em] text-newsprint/55">
+                    {s.sub}
+                  </div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+
+        <p className="mx-auto mt-12 max-w-xl text-center font-mono text-sm text-newsprint/70 md:mt-14">
+          Verified by .edu emails. Cross-referenced against three independent sources.
+        </p>
       </div>
 
       <style>{`
@@ -125,6 +202,36 @@ export function SectionMethod() {
         @media (prefers-reduced-motion: reduce) {
           .pipeline-line { transform: scaleX(1) !important; animation: none !important; }
           .pipeline-step { opacity: 1 !important; transform: none !important; transition: none !important; }
+        }
+
+        /* ── mobile roadmap ── (translate/scale are independent CSS props in
+           Tailwind v4, so centering via -translate-* never fights these) */
+        .tl-node {
+          opacity: 0;
+          scale: 0.6;
+          transition: opacity 500ms var(--ease-expo), scale 500ms var(--ease-expo);
+        }
+        .tl-step[data-visible] .tl-node { opacity: 1; scale: 1; }
+
+        .tl-card {
+          opacity: 0;
+          transition: opacity 600ms var(--ease-expo), translate 600ms var(--ease-expo);
+        }
+        .tl-step[data-side="left"] .tl-card { translate: -20px 0; }
+        .tl-step[data-side="right"] .tl-card { translate: 20px 0; }
+        .tl-step[data-visible] .tl-card { opacity: 1; translate: 0 0; }
+
+        .tl-rail-fill {
+          transform-origin: top;
+          scale: 1 0;
+          transition: scale 1200ms var(--ease-expo);
+        }
+        .tl-rail-fill[data-grow] { scale: 1 1; }
+
+        @media (prefers-reduced-motion: reduce) {
+          .tl-node { opacity: 1 !important; scale: 1 !important; transition: none !important; }
+          .tl-card { opacity: 1 !important; translate: 0 0 !important; transition: none !important; }
+          .tl-rail-fill { scale: 1 1 !important; transition: none !important; }
         }
         /* iconic stroke-dashoffset draw animations — armed-state triggers */
         .pipeline[data-state="armed"] .stroke-draw {

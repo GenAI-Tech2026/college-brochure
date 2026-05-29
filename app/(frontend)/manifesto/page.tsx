@@ -27,6 +27,8 @@ const theses: Array<{ n: string; body: string }> = [
 export default function ManifestoPage() {
   return (
     <div className="bg-ink">
+      {/* Accessible page title for the cinematic (screen readers / heading order). */}
+      <h1 className="sr-only">College Brochure Manifesto — Brochures lie. Students don&rsquo;t.</h1>
       {/* THE FILM — pinned scrub. */}
       <ManifestoScene />
 
@@ -61,7 +63,7 @@ export default function ManifestoPage() {
           </ScrollRevealQuote>
 
           <p className="mt-10 font-mono text-meta uppercase tracking-[0.3em] text-newsprint/60">
-            — UNFILTERED · 2026
+            — College Brochure · 2026
           </p>
         </div>
       </section>

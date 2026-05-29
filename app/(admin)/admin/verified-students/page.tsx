@@ -24,7 +24,18 @@ export default async function VerifiedStudentsListPage() {
   `;
   return (
     <div className="px-6 py-10 md:px-10 md:py-14">
-      <StudioHeader kicker="Admin · Collections" title="Verified students" />
+      <StudioHeader
+        kicker="Admin · Collections"
+        title="Verified students"
+        rightCol={
+          <Link
+            href="/admin/verified-students/new"
+            className="bg-truth px-3 py-1.5 font-mono text-meta uppercase tracking-[0.22em] text-newsprint hover:bg-truth/85"
+          >
+            + New student
+          </Link>
+        }
+      />
       <table className="w-full table-fixed border-collapse text-sm">
         <thead>
           <tr className="border-b border-newsprint/15 text-left font-mono text-meta uppercase tracking-[0.25em] text-newsprint/55">

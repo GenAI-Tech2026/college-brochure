@@ -1,9 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Masonry from "react-masonry-css";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Review } from "@/lib/mock-data/types";
 import { cn } from "@/lib/utils/cn";
+import { topTags } from "@/lib/utils/reality";
+import { SentimentBreakdown } from "./SentimentBreakdown";
 
 const vibes = ["all", "rage", "warm", "deadpan", "warning", "redeemed"] as const;
 type VibeFilter = (typeof vibes)[number];
@@ -18,7 +20,13 @@ type VibeFilter = (typeof vibes)[number];
  */
 export function EvidenceWall({ reviews }: { reviews: Review[] }) {
   const [vibe, setVibe] = useState<VibeFilter>("all");
-  const filtered = vibe === "all" ? reviews : reviews.filter((r) => r.vibe === vibe);
+  const [tag, setTag] = useState<string | null>(null);
+  const tags = useMemo(() => topTags(reviews), [reviews]);
+  const filtered = reviews.filter(
+    (r) =>
+      (vibe === "all" || r.vibe === vibe) &&
+      (!tag || (r.tags ?? []).includes(tag))
+  );
 
   return (
     <section
@@ -54,10 +62,67 @@ export function EvidenceWall({ reviews }: { reviews: Review[] }) {
         </div>
       </div>
 
+      {/* True distribution — shown before the filtered cards so the spread
+          is read as honest, not cherry-picked. */}
+      <SentimentBreakdown reviews={reviews} />
+
+      {/* Topic filter — most visitors want the reality on one specific thing
+          (placements, hostel, fees), not the whole pile. */}
+      {tags.length > 0 && (
+        <div className="mb-12 flex flex-wrap items-center gap-2">
+          <span className="mr-1 font-mono text-meta uppercase tracking-[0.2em] text-ink/55">
+            Reality on
+          </span>
+          <button
+            onClick={() => setTag(null)}
+            data-cursor="link"
+            className={cn(
+              "border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] transition",
+              tag === null
+                ? "border-ink bg-ink text-newsprint"
+                : "border-ink/30 text-ink hover:border-ink"
+            )}
+          >
+            everything
+          </button>
+          {tags.map((t) => (
+            <button
+              key={t}
+              onClick={() => setTag((cur) => (cur === t ? null : t))}
+              data-cursor="link"
+              className={cn(
+                "border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] transition",
+                tag === t
+                  ? "border-ink bg-ink text-newsprint"
+                  : "border-ink/30 text-ink hover:border-ink"
+              )}
+            >
+              {t.replace("-", " ")}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* 2 columns by default so each comment card reads wide and uses
           the available width instead of leaving empty space beside it.
           3-column was tested but cards came out narrow and the page felt
           unbalanced against the rest of the editorial layout. */}
+      {filtered.length === 0 && (
+        <p className="border border-ink/20 px-6 py-12 text-center font-serif text-xl italic text-ink/60">
+          No reviews match that combination yet.{" "}
+          <button
+            onClick={() => {
+              setVibe("all");
+              setTag(null);
+            }}
+            data-cursor="link"
+            className="underline decoration-truth decoration-2 underline-offset-4 hover:text-ink"
+          >
+            Clear filters
+          </button>
+        </p>
+      )}
+
       <Masonry
         breakpointCols={{ default: 2, 1024: 2, 640: 1 }}
         className="-ml-8 flex w-auto"

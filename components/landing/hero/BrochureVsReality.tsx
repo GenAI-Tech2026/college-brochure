@@ -67,16 +67,6 @@ export function BrochureVsReality({ claims }: { claims: BrochureVsRealityClaim[]
       </AnimatePresence>
 
       <div className="flex flex-col gap-2.5">
-        {/* CLAIMED row */}
-        <BarRow
-          key={"c-" + idx}
-          label="Brochure"
-          value={c.claimed}
-          unit={c.unit}
-          widthPct={claimedPct}
-          color="bg-truth"
-          delay={0.1}
-        />
         {/* REALITY row */}
         <BarRow
           key={"r-" + idx}
@@ -86,6 +76,16 @@ export function BrochureVsReality({ claims }: { claims: BrochureVsRealityClaim[]
           widthPct={actualPct}
           color="bg-newsprint/85"
           delay={0.5}
+        />
+        {/* CLAIMED row */}
+        <BarRow
+          key={"c-" + idx}
+          label="Brochure"
+          value={c.claimed}
+          unit={c.unit}
+          widthPct={claimedPct}
+          color="bg-truth"
+          delay={0.1}
         />
       </div>
 
@@ -97,13 +97,33 @@ export function BrochureVsReality({ claims }: { claims: BrochureVsRealityClaim[]
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}
           transition={{ delay: 1.1, duration: 0.35 }}
-          className="mt-1 flex items-center gap-2 font-mono text-[0.7rem] uppercase tracking-[0.25em] text-newsprint/65"
+          className="mt-1 flex items-center gap-2 font-mono text-[0.72rem] uppercase tracking-[0.2em] text-newsprint/80"
         >
           <span className="inline-block h-px w-6 bg-truth" />
           <span>Δ {deltaPct > 0 ? "+" : ""}{deltaPct}%</span>
-          <span className="text-newsprint/35">truth gap</span>
+          <span className="text-newsprint/55">truth gap</span>
         </motion.div>
       </AnimatePresence>
+
+      {/* cycle stepper — which claim of N, with the active segment filling
+          over its 6s dwell so the tile reads as actively playing. */}
+      <div className="mt-auto flex items-center gap-1.5 pt-1" aria-hidden>
+        {claims.map((_, i) => (
+          <span
+            key={i}
+            className="relative h-[3px] flex-1 overflow-hidden rounded-full bg-newsprint/15"
+          >
+            {i < idx && <span className="absolute inset-0 bg-newsprint/45" />}
+            {i === idx && (
+              <span
+                key={"fill-" + idx}
+                className="absolute inset-y-0 left-0 w-full origin-left bg-truth"
+                style={{ transform: "scaleX(0)", animation: "uf-bar-fill 6s linear forwards" }}
+              />
+            )}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -125,7 +145,7 @@ function BarRow({
 }) {
   return (
     <div className="grid grid-cols-[64px_1fr_56px] items-center gap-3">
-      <span className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-newsprint/55">
+      <span className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-newsprint/75">
         {label}
       </span>
       <div className="relative h-2 rounded-full bg-newsprint/8 overflow-hidden">

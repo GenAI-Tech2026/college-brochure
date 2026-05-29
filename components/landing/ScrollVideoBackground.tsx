@@ -31,6 +31,9 @@ export function ScrollVideoBackground() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Mobile (<768px): skip the scroll-scrubbed video entirely — just the
+    // static poster. Avoids the heavy decode/seek work on phones.
+    if (window.matchMedia("(max-width: 767px)").matches) return;
     setAllowMotion(true);
   }, []);
 

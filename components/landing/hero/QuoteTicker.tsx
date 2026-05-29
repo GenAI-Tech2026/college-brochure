@@ -67,8 +67,8 @@ export function QuoteTicker({ quotes }: { quotes: string[] }) {
             key={i}
             className="flex h-12 shrink-0 items-center px-1 md:h-14"
           >
-            <span className="block font-mono text-[0.78rem] leading-tight text-newsprint/90 md:text-[0.85rem]">
-              <span className="text-newsprint/45">— Student · </span>
+            <span className="block font-mono text-[0.8rem] leading-tight text-newsprint md:text-[0.88rem]">
+              <span className="text-newsprint/65">— Student · </span>
               <span className="bg-[linear-gradient(transparent_60%,rgba(255,67,50,0.18)_60%)] px-0.5">
                 {q}
               </span>

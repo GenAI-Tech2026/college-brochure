@@ -80,7 +80,7 @@ export function Nav() {
               data-cursor="link"
               className="font-display text-xl font-black uppercase tracking-[-0.02em]"
             >
-              <span className="relative">UN<span className="text-truth">FILTERED</span></span>
+              <span className="relative">College&nbsp;<span className="text-truth">Brochure</span></span>
             </Link>
 
             <nav className="hidden items-center gap-8 md:flex" aria-label="Primary">

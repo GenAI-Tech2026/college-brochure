@@ -80,7 +80,7 @@ export function CinematicIntro() {
             Now Showing
           </p>
           <p className="mt-4 font-display text-6xl font-black uppercase leading-none tracking-[-0.04em] text-newsprint md:text-9xl">
-            UNFILTERED
+            College Brochure
           </p>
           <p className="mt-4 font-mono text-meta uppercase tracking-[0.5em] text-newsprint/70">
             File · 26 · Opening

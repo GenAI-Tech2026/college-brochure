@@ -45,13 +45,24 @@ export default async function EditReviewPage({
   if (!Number.isFinite(id)) notFound();
   const { ok } = await searchParams;
 
-  const [row] = await sql<Row[]>`
-    SELECT id, college_slug, author_pseudonym, author_year, author_branch,
-           rating, truth_score, title, body, tags, vibe, has_video,
-           verification_method, upvotes, receipts
-    FROM uf_reviews WHERE id = ${id} LIMIT 1
-  `;
+  const [[row], colleges] = await Promise.all([
+    sql<Row[]>`
+      SELECT id, college_slug, author_pseudonym, author_year, author_branch,
+             rating, truth_score, title, body, tags, vibe, has_video,
+             verification_method, upvotes, receipts
+      FROM uf_reviews WHERE id = ${id} LIMIT 1
+    `,
+    sql<{ slug: string; short_name: string }[]>`
+      SELECT slug, short_name FROM uf_colleges ORDER BY short_name
+    `,
+  ]);
   if (!row) notFound();
+
+  // Keep the current slug selectable even if it no longer matches a college,
+  // so saving never silently re-points the review to a different college.
+  const slugOptions = colleges.some((c) => c.slug === row.college_slug)
+    ? colleges
+    : [{ slug: row.college_slug, short_name: `${row.college_slug} (unmatched)` }, ...colleges];
 
   const save = updateReview.bind(null, id);
   const del = deleteReview.bind(null, id);
@@ -73,12 +84,28 @@ export default async function EditReviewPage({
         <TextareaField label="Body" name="body" defaultValue={row.body} rows={8} required />
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          <TextField label="College slug" name="college_slug" defaultValue={row.college_slug} required />
+          <label className="block">
+            <span className="block font-mono text-meta uppercase tracking-[0.25em] text-newsprint/60">
+              College <span className="ml-1 text-truth">*</span>
+            </span>
+            <select
+              name="college_slug"
+              required
+              defaultValue={row.college_slug}
+              className="can-fade mt-2 w-full border-b border-newsprint/30 bg-[#141210] py-2 text-newsprint outline-none focus:border-truth"
+            >
+              {slugOptions.map((c) => (
+                <option key={c.slug} value={c.slug} className="bg-ink">
+                  {c.short_name} ({c.slug})
+                </option>
+              ))}
+            </select>
+          </label>
           <TextField label="Author pseudonym" name="author_pseudonym" defaultValue={row.author_pseudonym} required />
-          <TextField label="Author year (1–5)" name="author_year" type="number" defaultValue={row.author_year} />
+          <TextField label="Author year (1–5)" name="author_year" type="number" defaultValue={row.author_year} min={1} max={5} />
           <TextField label="Author branch" name="author_branch" defaultValue={row.author_branch} />
-          <TextField label="Rating (1–5)" name="rating" type="number" defaultValue={row.rating} />
-          <TextField label="Truth score (0–100)" name="truth_score" type="number" defaultValue={row.truth_score} />
+          <TextField label="Rating (1–5)" name="rating" type="number" defaultValue={row.rating} min={1} max={5} />
+          <TextField label="Truth score (0–100)" name="truth_score" type="number" defaultValue={row.truth_score} min={0} max={100} />
           <SelectField label="Vibe" name="vibe" options={VIBES} defaultValue={row.vibe} />
           <SelectField label="Verification method" name="verification_method" options={METHODS} defaultValue={row.verification_method} />
           <TextField label="Upvotes" name="upvotes" type="number" defaultValue={row.upvotes} />

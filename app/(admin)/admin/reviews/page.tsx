@@ -32,17 +32,30 @@ export default async function ReviewsListPage({
   `;
   return (
     <div className="px-6 py-10 md:px-10 md:py-14">
-      <StudioHeader kicker="Admin · Collections" title="Reviews" />
+      <StudioHeader
+        kicker="Admin · Collections"
+        title="Reviews"
+        rightCol={
+          <Link
+            href="/admin/reviews/new"
+            className="bg-truth px-3 py-1.5 font-mono text-meta uppercase tracking-[0.22em] text-newsprint hover:bg-truth/85"
+          >
+            + New review
+          </Link>
+        }
+      />
 
       <form className="mb-6 grid grid-cols-12 gap-3 text-sm">
         <input
           name="q"
+          aria-label="Search reviews by title or pseudonym"
           defaultValue={q ?? ""}
           placeholder="Search title or pseudonym…"
           className="col-span-12 border-b border-newsprint/25 bg-transparent py-2 text-newsprint outline-none focus:border-truth md:col-span-7"
         />
         <select
           name="vibe"
+          aria-label="Filter reviews by vibe"
           defaultValue={vibe ?? ""}
           className="col-span-6 border-b border-newsprint/25 bg-[#141210] py-2 text-newsprint outline-none focus:border-truth md:col-span-3"
         >

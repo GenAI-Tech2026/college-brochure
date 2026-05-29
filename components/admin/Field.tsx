@@ -17,7 +17,16 @@ export function TextField({
   hint,
   required,
   type = "text",
-}: BaseProps & { defaultValue?: string | number; type?: string }) {
+  min,
+  max,
+  step,
+}: BaseProps & {
+  defaultValue?: string | number;
+  type?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
   return (
     <label className="block">
       <span className="block font-mono text-meta uppercase tracking-[0.25em] text-newsprint/60">
@@ -28,6 +37,9 @@ export function TextField({
         type={type}
         name={name}
         required={required}
+        min={min}
+        max={max}
+        step={step}
         defaultValue={defaultValue ?? ""}
         className="can-fade mt-2 w-full border-b border-newsprint/30 bg-transparent py-2 text-newsprint outline-none focus:border-truth"
       />

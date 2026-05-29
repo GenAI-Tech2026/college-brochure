@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { sql } from "@/lib/db";
 import { StudioHeader } from "@/components/admin/Field";
+import { recomputeAll } from "@/lib/admin/actions";
 
 export const metadata = { title: "Colleges" };
+export const dynamic = "force-dynamic";
 
 type Row = {
   id: number;
@@ -23,7 +25,28 @@ export default async function CollegesListPage() {
   `;
   return (
     <div className="px-6 py-10 md:px-10 md:py-14">
-      <StudioHeader kicker="Admin · Collections" title="Colleges" />
+      <StudioHeader
+        kicker="Admin · Collections"
+        title="Colleges"
+        rightCol={
+          <div className="flex items-center gap-3">
+            <form action={recomputeAll}>
+              <button
+                type="submit"
+                className="border border-newsprint/30 px-3 py-1.5 font-mono text-meta uppercase tracking-[0.22em] text-newsprint/65 hover:border-truth hover:text-truth"
+              >
+                Recompute scores
+              </button>
+            </form>
+            <Link
+              href="/admin/colleges/new"
+              className="bg-truth px-3 py-1.5 font-mono text-meta uppercase tracking-[0.22em] text-newsprint hover:bg-truth/85"
+            >
+              + New college
+            </Link>
+          </div>
+        }
+      />
       <table className="w-full table-fixed border-collapse text-sm">
         <thead>
           <tr className="border-b border-newsprint/15 text-left font-mono text-meta uppercase tracking-[0.25em] text-newsprint/55">

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="5" fill="#141210"/>
+  <!-- redaction bar motif in the brand 'truth' red -->
+  <rect x="6" y="13.5" width="20" height="5" fill="#FF4332"/>
+  <text x="16" y="11" font-family="Georgia, 'Times New Roman', serif" font-size="9" font-weight="700"
+        text-anchor="middle" fill="#F4F1EA">UF</text>
+</svg>

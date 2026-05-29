@@ -17,10 +17,10 @@ const Payload = z.object({
   brochureClaim: z.string().min(20),
   reality: z.string().min(20),
   hasReceipts: z.enum(["yes", "no"]),
-  email: z
-    .string()
-    .regex(/^[^\s@]+@[^\s@]+\.(edu|edu\.in|ac\.in)$/i, "Use a .edu / .ac.in email."),
+  email: z.string().email("Enter a valid email address."),
   identity: z.enum(["anonymous", "named"]),
+  // Public paths returned by uploadReceipts(); optional.
+  receiptPaths: z.array(z.string()).max(6).optional(),
 });
 
 export type SubmissionResult =
@@ -99,16 +99,21 @@ export async function submitTestimony(
     ? v.email.split("@")[0]
     : pseudonymFor(v.email);
 
+  const receiptPaths = v.receiptPaths ?? [];
+  // If files were actually attached, receipts are present regardless of the
+  // yes/no toggle the student last touched.
+  const hasReceipts = receiptPaths.length > 0 || v.hasReceipts === "yes";
+
   try {
     const [row] = await sql<{ id: number }[]>`
       INSERT INTO uf_submissions (
         case_no, college_name, college_slug,
-        brochure_claim, reality, has_receipts,
+        brochure_claim, reality, has_receipts, receipt_paths,
         email, email_domain, identity, pseudonym, status
       )
       VALUES (
         ${caseNo}, ${v.college}, ${fallbackSlug},
-        ${v.brochureClaim}, ${v.reality}, ${v.hasReceipts === "yes"},
+        ${v.brochureClaim}, ${v.reality}, ${hasReceipts}, ${receiptPaths},
         ${v.email}, ${domain}, ${v.identity}, ${pseudonym}, ${"pending"}
       )
       RETURNING id

@@ -103,7 +103,7 @@ function ExitRow({ c }: { c: College }) {
       className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 border-t border-newsprint/15 pt-8"
     >
       <p className="font-mono text-meta uppercase tracking-[0.3em] text-newsprint/60">
-        Filed by UNFILTERED · {c.brochureClaims.length} claims redacted
+        Filed by College Brochure · {c.brochureClaims.length} claims redacted
       </p>
       <MagneticButton as="a" href={`/college/${c.slug}`} variant="ghost" strength={0.4}>
         Open the full file

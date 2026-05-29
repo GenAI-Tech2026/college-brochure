@@ -6,6 +6,9 @@ export const metadata = {
   description: "A cinematic procession through five Indian colleges, each presented as a chapter.",
 };
 
+// Read live from the DB on every request so admin edits show immediately.
+export const dynamic = "force-dynamic";
+
 export default async function ShowcasePage() {
   const colleges = await getAllColleges();
   return <ShowcaseClient colleges={colleges} />;

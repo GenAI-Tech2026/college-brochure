@@ -6,6 +6,9 @@ export const metadata = {
   robots: { index: false },
 };
 
+// Read live from the DB on every request so newly published reviews appear.
+export const dynamic = "force-dynamic";
+
 /**
  * /wall-of-receipts — The Archive.
  *

@@ -4,9 +4,11 @@ import { FeaturedExposes as SectionReceipts } from "@/components/landing/Feature
 import { SectionMethod } from "@/components/landing/SectionMethod";
 import { CounterStrip as SectionNumbers } from "@/components/landing/CounterStrip";
 import { SectionLiveStream } from "@/components/landing/SectionLiveStream";
-import { SubmitTeaser as SectionJoin } from "@/components/landing/SubmitTeaser";
 import { ScrollVideoBackground } from "@/components/landing/ScrollVideoBackground";
 import { getCollegeStats, getFeaturedCases } from "@/lib/data";
+
+// Read live stats from the DB on every request so the dashboard stays current.
+export const dynamic = "force-dynamic";
 
 /**
  * Home page — new "Live Ledger" composition.
@@ -43,16 +45,11 @@ export default async function Page() {
     <>
       <ScrollVideoBackground />
       <Hero />
-      {/* Two transparent full-height screens — pure footage, nothing over it.
-          The pass-1 reveal completes by the bottom of the second one. */}
-      <div className="h-screen" aria-hidden />
-      <div className="h-screen" aria-hidden />
       <SectionReceipts cases={cases?.length ? cases : undefined} />
       <SectionMethod />
       <SectionNumbers stats={stats} />
       <SectionGap />
       <SectionLiveStream />
-      <SectionJoin totalReviews={stats?.totalReviews} />
     </>
   );
 }

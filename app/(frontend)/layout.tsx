@@ -13,6 +13,7 @@ import { LenisProvider } from "@/components/providers/LenisProvider";
 import { ScrollTriggerProvider } from "@/components/providers/ScrollTriggerProvider";
 import { CustomCursor } from "@/components/CustomCursor";
 import { KonamiCode } from "@/components/KonamiCode";
+import { IntroPrologue } from "@/components/IntroPrologue";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 
@@ -48,6 +49,16 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
       className={`${fraunces.variable} ${instrument.variable} ${interTight.variable} ${jetbrains.variable}`}
     >
       <body>
+        {/* No-flash gate: runs synchronously before the overlay below is
+            parsed, so visitors who've already seen the prologue never see
+            it flash. Paired with the `.uf-prologue-seen` rule in globals.css. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(localStorage.getItem('uf_prologue_seen'))document.documentElement.classList.add('uf-prologue-seen')}catch(e){}",
+          }}
+        />
+        <IntroPrologue />
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[99999] focus:bg-truth focus:px-3 focus:py-2 focus:text-newsprint"

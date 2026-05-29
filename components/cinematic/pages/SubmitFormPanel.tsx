@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { loadDraft, saveDraft, clearDraft } from "@/lib/submit/useSubmitDraft";
+import { uploadReceipts } from "@/lib/submit/uploadAction";
 
 /**
  * SubmitFormPanel — the floating glass panel that drives the cinematic.
@@ -27,12 +28,8 @@ const schema = z.object({
     .string()
     .min(20, "Tell us what you actually found — at least 20 characters."),
   hasReceipts: z.enum(["yes", "no"]),
-  email: z
-    .string()
-    .regex(
-      /^[^\s@]+@[^\s@]+\.(edu|edu\.in|ac\.in)$/i,
-      "Use your .edu / .ac.in email.",
-    ),
+  receiptPaths: z.array(z.string()).max(6).optional(),
+  email: z.string().email("Enter a valid email address."),
   identity: z.enum(["anonymous", "named"]),
 });
 type Values = z.infer<typeof schema>;
@@ -42,7 +39,7 @@ const STEPS = [
   { name: "brochureClaim", label: "What did the brochure or website promise?", placeholder: "Quote the claim. Be specific." },
   { name: "reality",       label: "What was the actual reality?",             placeholder: "Be specific. Numbers, dates help." },
   { name: "hasReceipts",   label: "Got receipts?",                            placeholder: "" },
-  { name: "email",         label: "Your .edu / .ac.in email",                 placeholder: "you@university.edu" },
+  { name: "email",         label: "Your email",                               placeholder: "you@email.com" },
   { name: "identity",      label: "Anonymous or named?",                      placeholder: "" },
 ] as const;
 type FieldName = (typeof STEPS)[number]["name"];
@@ -86,6 +83,7 @@ export function SubmitFormPanel({
     reValidateMode: "onChange",
     defaultValues: {
       hasReceipts: "yes",
+      receiptPaths: [],
       identity: "anonymous",
     },
   });
@@ -315,9 +313,11 @@ export function SubmitFormPanel({
             min={20}
           />
         ) : current.name === "hasReceipts" ? (
-          <ReceiptToggle
+          <ReceiptStep
             value={watch("hasReceipts")}
             onChange={(v) => setValue("hasReceipts", v)}
+            paths={watch("receiptPaths") ?? []}
+            onPathsChange={(p) => setValue("receiptPaths", p)}
           />
         ) : (
           <IdentityToggle
@@ -425,13 +425,44 @@ function CharCountedTextarea({
   );
 }
 
-function ReceiptToggle({
+function ReceiptStep({
   value,
   onChange,
+  paths,
+  onPathsChange,
 }: {
   value: "yes" | "no";
   onChange: (v: "yes" | "no") => void;
+  paths: string[];
+  onPathsChange: (p: string[]) => void;
 }) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setError(null);
+    setUploading(true);
+    const fd = new FormData();
+    for (const f of Array.from(files)) fd.append("files", f);
+    const res = await uploadReceipts(fd);
+    setUploading(false);
+    if (!res.ok) {
+      setError(res.reason);
+      return;
+    }
+    onPathsChange([...paths, ...res.paths].slice(0, 6));
+    onChange("yes");
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const remove = (p: string) => {
+    const next = paths.filter((x) => x !== p);
+    onPathsChange(next);
+    if (next.length === 0) onChange("no");
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <p className="font-mono text-meta uppercase tracking-[0.25em] text-newsprint/55">
@@ -452,7 +483,10 @@ function ReceiptToggle({
         </button>
         <button
           type="button"
-          onClick={() => onChange("no")}
+          onClick={() => {
+            onChange("no");
+            onPathsChange([]);
+          }}
           className={
             "flex-1 border px-3 py-3 font-mono text-meta uppercase tracking-[0.25em] transition-colors " +
             (value === "no"
@@ -463,9 +497,63 @@ function ReceiptToggle({
           No — just my account
         </button>
       </div>
-      <p className="mt-1 font-mono text-meta uppercase tracking-[0.2em] text-newsprint/40">
-        File uploads are disabled in this preview.
-      </p>
+
+      {value === "yes" ? (
+        <div className="mt-2">
+          <label
+            className={
+              "flex cursor-pointer items-center justify-center border border-dashed border-newsprint/30 px-3 py-4 text-center font-mono text-meta uppercase tracking-[0.2em] transition-colors hover:border-truth " +
+              (uploading ? "opacity-50" : "text-newsprint/65")
+            }
+          >
+            <input
+              ref={inputRef}
+              type="file"
+              multiple
+              accept="image/png,image/jpeg,image/webp,image/gif,application/pdf"
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => void handleFiles(e.target.files)}
+            />
+            {uploading
+              ? "Uploading…"
+              : paths.length
+              ? "Add more · up to 6"
+              : "Attach receipts · images or PDF · max 8 MB"}
+          </label>
+
+          {error ? (
+            <p className="mt-2 font-mono text-meta uppercase tracking-[0.2em] text-truth">
+              {error}
+            </p>
+          ) : null}
+
+          {paths.length ? (
+            <ul className="mt-3 space-y-1">
+              {paths.map((p) => {
+                const name = p.split("/").pop() ?? p;
+                return (
+                  <li
+                    key={p}
+                    className="flex items-center justify-between gap-3 border border-newsprint/15 bg-ink/40 px-3 py-2"
+                  >
+                    <span className="truncate font-mono text-meta uppercase tracking-[0.18em] text-newsprint/70">
+                      📎 {name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => remove(p)}
+                      className="shrink-0 font-mono text-meta uppercase tracking-[0.2em] text-newsprint/45 hover:text-truth"
+                    >
+                      Remove
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
